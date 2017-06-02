@@ -1,0 +1,374 @@
+<!doctype html>
+  <html>
+
+    <head>
+      <meta charset="UTF-8" />
+      <title>Choose a character</title>
+      <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/jquery-ui.min.css" rel="stylesheet">
+       <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/theme.min.css" rel="stylesheet">
+    </head>
+
+    <body>
+
+      <section>
+
+<div>
+<canvas id="canvas" width="1100" height="600">
+This text is displayed if your browser does not support HTML5 Canvas.
+</canvas>
+
+<div style="float: right;" id="make-moves">
+<button id="rollDye">Click to roll!</button>
+  <div class="showRoll" >Dice Roll: <span id="rolled-number"></span></div>
+  <div class="showMoves"> Moves Left: <span id="moves-left"></span></div>
+  <div id="waiting-message">Waiting for player to act ...</div>
+
+  <ul id="player-cards"> Cards</ul>
+  </div>
+
+</div>
+        <div id="waiting">Waiting for player 2</div>
+        <div id="dialog-form" title="Pick a character">
+          <form>
+
+            <div class="widget">
+              <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum</button>
+
+              <button class="ui-button ui-widget ui-corner-all" id="Mustard">Col. Mustard</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Black" >Mrs. Black</button>
+              <br>
+              <br>
+              <br>
+              <button class="ui-button ui-widget ui-corner-all" id="Green">Mr. Green</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Peacock">Mrs.Peacock</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Scarlet">Ms. Scarlet</button>
+            </div>
+            <div id="player1">Player 1:<span id="character"></span> </div>
+            <div id="player2">Player 2: <span id="character"></span></div>
+            <div id ="already-picked"></div>
+
+          </form>
+        </div>
+      </section>
+      <script src="/socket.io/socket.io.js"></script>
+      <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+      <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+      <script>
+
+        $( function() {
+          var canvas;
+          var context;
+          var size = 25;
+          var dx = 25;
+          var dy = 25;
+          var r = 10;
+          var x = 537.5;
+          var y = 312.5;
+          var WIDTH = 1100;
+          var HEIGHT = 600;
+
+          var rollAmount;
+          var movesLeft;
+          var i;
+          var beforeRoom;
+
+          function circle(x,y,r, color) {
+          context.beginPath();
+          context.fillStyle = color;
+          context.arc(x, y, r, 0, Math.PI*2, true);
+          context.fill();
+          }
+
+          function rect(x,y,w,h) {
+          context.beginPath();
+          context.rect(x,y,w,h);
+          context.closePath();
+          context.fill();
+          context.stroke();
+          }
+
+          function drawGrid (HEIGHT, WIDTH, size) {
+           //      Draw lines horizontally
+           var startingPoint = HEIGHT - size;
+                for (var i =0; i < (HEIGHT/size -1); i++) {
+                  context.beginPath();
+                  context.lineWidth = 1;
+                  context.moveTo(0, startingPoint);
+                  context.lineTo(WIDTH, startingPoint);
+                  context.stroke();
+                  startingPoint = startingPoint - size;
+                }
+               var startingPoint = WIDTH - size;
+                //Draw lines vertically
+                for (var i =0; i < (WIDTH/size  -1); i++) {
+                  context.beginPath();
+                  context.lineWidth = 1;
+                  context.moveTo(startingPoint, 0);
+                  context.lineTo(startingPoint, HEIGHT);
+                  context.stroke();
+                  startingPoint = startingPoint - size
+                }
+
+          }
+
+
+          //Draw rooms
+
+          function drawRoom(roomName){
+            context.beginPath();
+
+                 context.lineWidth = 4;
+
+                  context.rect(roomName.x, roomName.y, roomName.width, roomName.height);
+                  context.stroke();
+                  context.fillStyle = 'rgba(225,225,225,0.5)';
+                  context.fillRect(roomName.x + 2, roomName.y + 2, roomName.width - 4, roomName.height - 4);
+                   context.font = "20px san-serif";
+                  context.fillStyle ="black";
+                  context.fillText(roomName.name, (roomName.x + (roomName.width/2)-25), (roomName.height+roomName.y) - (roomName.height/2));
+          }
+
+
+          function clear() {
+          context.clearRect(0, 0, WIDTH, HEIGHT);
+          }
+
+          function draw() {
+clear();
+context.fillStyle = "white";
+context.strokeStyle = "black";
+rect(0,0,WIDTH,HEIGHT);
+
+circle(player1.x, player1.y, r, player1.color);
+circle(player2.x, player2.y, r, player2.color);
+drawGrid(HEIGHT, WIDTH, size);
+placesArray.forEach(drawRoom);
+
+}
+
+          function init() {
+          canvas = document.getElementById("canvas");
+          context = canvas.getContext("2d");
+          return setInterval(draw, 10);
+          }
+
+
+          //calls io from index.js
+          var socket = io();
+
+          //object containing player1 and player2
+          var players = [{
+                        player:"",
+                        id:"",
+                        isTurn:false,
+                        inRoom:false,
+                        cards: [],
+                        trackedTurn : [],
+                        x:537.5,
+                        y: 312.5,
+                        color: ""
+                        },
+                         {
+                        player:"",
+                        id:"",
+                        isTurn:false,
+                        inRoom:false,
+                        cards: [],
+                        trackedTurn : [],
+                        x:512.5,
+                        y: 312.5,
+                        color: ""
+                        }
+                        ]
+
+          player1 = players[0]
+          player2 = players[1]
+
+          function getColor (player1) {
+            if (player1.player === "Col. Mustard"){
+                  player1.color = "yellow";
+                }
+                 else if (player1.player === "Mrs.Peacock"){
+                  player1.color = "blue";
+                } else if (player1.player === "Mr. Green"){
+                  player1.color= "green";
+                } else if (player1.player === "Prof. Plum"){
+                  player1.color = "purple";
+                } else if (player1.player === "Mrs. Black"){
+                  player1.color = "black";
+                } else if (player1.player === "Ms. Scarlet"){
+                  player1.color = "red";
+                }
+          }
+
+          var library = {name: "Library", x:0,y:0,width:300,height:150};
+
+          var study = {name:"Study", x:350,y:0,width:250,height:150};
+          var hall= {name:"Hall", x:700,y:0,width:125,height:200};
+          var lounge = {name:"Lounge", x:875,y:0,width:225,height:175};
+          var diningRoom = {name:"Dining Room", x:875,y:250,width:225,height:125};
+          var kitchen = {name: "Kitchen", x:625,y:450,width:250,height:150};
+          var ballroom = {name:"Ballroom", x:275,y:375,width:225,height:225};
+          var conservatory = {name: "Conservatory", x:0,y:300,width:225,height:225};
+          var billiard = {name: "Billiard Room", x:925,y:425,width:175,height:175};
+
+          var placesArray =[library, study, hall, lounge, diningRoom, kitchen, ballroom, conservatory, billiard];
+
+          var places = [];
+
+          placesArray.forEach( function(place) {
+            places.push(place.name);
+          });
+
+          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
+
+          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
+
+          //Fisher Yates shuffle
+          function shuffle (array) {
+            var i = 0
+              , j = 0
+              , temp = null
+
+            for (i = array.length - 1; i > 0; i -= 1) {
+              j = Math.floor(Math.random() * (i + 1))
+              temp = array[i]
+              array[i] = array[j]
+              array[j] = temp
+            }
+          }
+
+          shuffle(places);
+          shuffle(suspects);
+          shuffle(weapons);
+
+
+
+          var who = suspects.pop();
+          var how = weapons.pop();
+          var where = places.pop();
+
+          var allCards = places;
+
+          Array.prototype.push.apply(allCards, suspects);
+          Array.prototype.push.apply(allCards, weapons);
+          console.log(allCards)
+
+          function dealCards (array) {
+            for (var i = 0; i < array.length; i++) {
+
+              player1.cards.push(array[i]);
+              i += 1
+              player2.cards.push(array[i]);
+            }
+
+          }
+
+          shuffle(allCards);
+          dealCards(allCards);
+
+
+          var dialog;
+          var form;
+           //jquery ui dialog for options box
+          dialog = $( "#dialog-form" ).dialog({
+            autoOpen: false,
+            height: 400,
+            width: 650,
+            modal: true,
+
+            close: function() {
+              form[ 0 ].reset();
+            }
+          });
+          form = dialog.find( "form" ).on( "submit", function( event ) {
+              event.preventDefault();
+          });
+
+
+          $( "button, input, a" ).click( function( event ) {
+            event.preventDefault();
+            }
+          );
+
+          //create jquery ui buttons
+          $( ".widget input[type=submit], .widget a, .widget button" ).button();
+
+          //show waiting message if only one user connected
+          $("#waiting").show();
+          $("#make-moves").hide();
+
+
+
+
+
+          //on click of button in a browser windo send button's text to server
+          $("button").click( function(){
+
+            socket.emit('nameChosen', $(this).text());
+          });
+
+          //get socket ids from index.js and add them to players object
+          socket.on('grabSocketId', function(data){
+            if (data.length === 2) {
+              players[0].id= data[0];
+              players[1].id = data[1];
+
+              //hide waiting since there are now 2 players
+              $("#waiting").hide();
+
+              //open dialog with options to pick characters
+              dialog.dialog( "open" );
+
+            }
+
+          });
+
+          //function for if user already picked a name and clicked a button
+          socket.on('alreadyPicked', function(msg){
+              $("#already-picked").append(msg);
+          });
+
+          //function for when player's name is selected by user
+          socket.on('nameChosen', function(msg){
+            if ($("#player1").text().endsWith(" ") === true){
+
+              $("#player1").append( msg );
+              player1.player= msg;
+
+              //get fillstyle for character drawing
+              getColor(player1);
+
+              //remove button from avaiable options
+              var buttonPressed = $("button:contains('" + msg + "')")
+              var buttonId = (buttonPressed.attr('id'))
+              $("#" + buttonId).remove();
+            }
+            else {
+              $("#player2").append(msg);
+              player2.player =msg;
+
+              getColor(player2);
+
+              var buttonPressed = $("button:contains('" + msg + "')")
+              var buttonId = (buttonPressed.attr('id'))
+              $("#" + buttonId).remove();
+
+              if (player1.player !=="" && player2.player !== ""){
+                  console.log(players)
+
+
+
+                setTimeout(function () {dialog.dialog( "close" )}, 200);
+                init()
+              }
+
+            }
+         return players
+        });
+      });
+
+    </script>
+
+    </body>
+  </html>
