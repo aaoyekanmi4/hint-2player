@@ -17,31 +17,33 @@
 This text is displayed if your browser does not support HTML5 Canvas.
 </canvas>
 
-<div style="float: right;" id="make-moves">
-<button id="rollDye">Click to roll!</button>
-  <div class="showRoll" >Dice Roll: <span id="rolled-number"></span></div>
-  <div class="showMoves"> Moves Left: <span id="moves-left"></span></div>
+<div style="float: right; width:210px; height: 600px" id="make-moves">
+<button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
+  <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
+  <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
   <div id="waiting-message">Waiting for player to act ...</div>
 
-  <ul id="player-cards"> Cards</ul>
+  <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
+  <div id="waiting">Waiting for player 2</div>
+        <button  class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
   </div>
 
 </div>
-        <div id="waiting">Waiting for player 2</div>
+
         <div id="dialog-form" title="Pick a character">
           <form>
 
             <div class="widget">
-              <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum  <i class="fa fa-circle-o" style="color:purple;" aria-hidden="true"></i></button>
 
-              <button class="ui-button ui-widget ui-corner-all" id="Mustard">Col. Mustard</button>
-              <button class="ui-button ui-widget ui-corner-all" id="Black" >Mrs. Black</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Mustard">Col. Mustard  <i class="fa fa-circle-o" style="color:yellow;" aria-hidden="true"></i></button>
+              <button class="ui-button ui-widget ui-corner-all" id="Black" >Mrs. Black  <i class="fa fa-circle-o" style="color:black;" aria-hidden="true"></i></button>
               <br>
               <br>
               <br>
-              <button class="ui-button ui-widget ui-corner-all" id="Green">Mr. Green</button>
-              <button class="ui-button ui-widget ui-corner-all" id="Peacock">Mrs.Peacock</button>
-              <button class="ui-button ui-widget ui-corner-all" id="Scarlet">Ms. Scarlet</button>
+              <button class="ui-button ui-widget ui-corner-all" id="Green">Mr. Green  <i class="fa fa-circle-o" style="color:green;" aria-hidden="true"></i></button>
+              <button class="ui-button ui-widget ui-corner-all" id="Peacock">Mrs.Peacock  <i class="fa fa-circle-o" style="color:blue" aria-hidden="true"></i></button>
+              <button class="ui-button ui-widget ui-corner-all" id="Scarlet">Ms. Scarlet  <i class="fa fa-circle-o" style="color:red;" aria-hidden="true"></i></button>
             </div>
             <div id="player1">Player 1:<span id="character"></span> </div>
             <div id="player2">Player 2: <span id="character"></span></div>
@@ -49,13 +51,46 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
           </form>
         </div>
+        <div id="suggestion-form" title="Make Suggestion">
+
+
+  <form>
+
+      <label for="suspect">Suspect</label>
+      <select class="ui-selectmenu" name="suspect" id="suspects">
+        <option class="suspect" value="Mrs. Peacock">Mrs. Peacock</option>
+        <option class="suspect" value="Col. Mustard">Col. Mustard</option>
+        <option class="suspect" value="Prof. Plum">Prof. Plum</option>
+        <option class ="suspect" value ="Mr. Green">Mr. Green</option>
+        <option class ="suspect" value ="Mrs. White">Mrs. White</option>
+        <option class ="suspect" value ="Ms. Scarlet">Ms. Scarlet</option>
+
+
+      </select>
+      <label for="weapon">Weapon</label>
+      <select  name="weapon" id="weapons">
+        <option class="weapon" value="Knife"> Knife</option>
+        <option class="weapon" value="Candlestick">Candlestick</option>
+        <option class="weapon" value="Wrench">Wrench</option>
+        <option class="weapon" value="Revolver">Revolver</option>
+        <option class="weapon" value="Leadpipe">Lead Pipe</option>
+        <option class="weapon" value="Rope">Rope</option>
+      </select>
+      <label for="place">Room</label>
+      <span tabindex="0" id="name-of-room" role="combobox" aria-expanded="false"  class="ui-selectmenu-button ui-button ui-widget ui-selectmenu-button-closed ui-corner-all" aria-activedescendant="ui-id-8" aria-labelledby="ui-id-8" aria-disabled="true"><span class="ui-selectmenu-text"></span></span>
+
+  </form>
+</div>
       </section>
       <script src="/socket.io/socket.io.js"></script>
       <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
       <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+      <script src="https://use.fontawesome.com/6791ba42d9.js"></script>
       <script>
 
         $( function() {
+
+
           var canvas;
           var context;
           var size = 25;
@@ -134,21 +169,26 @@ This text is displayed if your browser does not support HTML5 Canvas.
           }
 
           function draw() {
-clear();
-context.fillStyle = "white";
-context.strokeStyle = "black";
-rect(0,0,WIDTH,HEIGHT);
+          clear();
+          context.fillStyle = "white";
+          context.strokeStyle = "black";
+          rect(0,0,WIDTH,HEIGHT);
 
-circle(player1.x, player1.y, r, player1.color);
-circle(player2.x, player2.y, r, player2.color);
-drawGrid(HEIGHT, WIDTH, size);
-placesArray.forEach(drawRoom);
+          circle(player1.x, player1.y, r, player1.color);
+          circle(player2.x, player2.y, r, player2.color);
+          drawGrid(HEIGHT, WIDTH, size);
+          placesArray.forEach(drawRoom);
 
-}
+          }
 
           function init() {
           canvas = document.getElementById("canvas");
           context = canvas.getContext("2d");
+          $("#make-moves").show();
+                 $("#rollDye").show();
+  $(".showRoll").hide();
+  $(".showMoves").hide();
+  $("#waiting-message").hide();
           return setInterval(draw, 10);
           }
 
@@ -185,18 +225,18 @@ placesArray.forEach(drawRoom);
           player2 = players[1]
 
           function getColor (player1) {
-            if (player1.player === "Col. Mustard"){
+            if (player1.player === "Col. Mustard  "){
                   player1.color = "yellow";
                 }
-                 else if (player1.player === "Mrs.Peacock"){
+                 else if (player1.player === "Mrs.Peacock  "){
                   player1.color = "blue";
-                } else if (player1.player === "Mr. Green"){
+                } else if (player1.player === "Mr. Green  "){
                   player1.color= "green";
-                } else if (player1.player === "Prof. Plum"){
+                } else if (player1.player === "Prof. Plum  "){
                   player1.color = "purple";
-                } else if (player1.player === "Mrs. Black"){
+                } else if (player1.player === "Mrs. Black  "){
                   player1.color = "black";
-                } else if (player1.player === "Ms. Scarlet"){
+                } else if (player1.player === "Ms. Scarlet  "){
                   player1.color = "red";
                 }
           }
@@ -267,7 +307,163 @@ placesArray.forEach(drawRoom);
           shuffle(allCards);
           dealCards(allCards);
 
+$.each(player1.cards, function (index, value) {
+    $('#player-cards').append($('<li/>', {
+        value: value,
+        text : value,
+        class : "ui-widget-content",
+    }));
+});
 
+function showMovesLeft (movesLeft) {
+  if (typeof movesLeft !== 'undefined'){
+    $("#moves-left").text(movesLeft)
+  }
+}
+
+if (players[0].isTurn ===true){
+  $("#rollDye").show();
+  $(".showRoll").hide();
+  $(".showMoves").hide();
+  $("#waiting-message").hide();
+
+}
+
+
+
+
+
+function rollDye () {
+    rollAmount = Math.floor((Math.random() * 12) + 1);
+    console.log(rollAmount);
+
+
+  $("#rollDye").hide();
+  $(".showRoll").show();
+  $(".showMoves").show();
+
+    i =0;
+    movesLeft = rollAmount;
+    showMovesLeft(movesLeft);
+    console.log(rollAmount.toString());
+    $("#rolled-number").text("You rolled a " + rollAmount.toString());
+    // if (movesLeft === 0) {
+    //   players[0].isTurn = false;
+    // }
+    return rollAmount
+
+
+}
+
+function doKeyDown(evt){
+
+if (typeof rollAmount !== 'undefined') {
+
+if (i === rollAmount || movesLeft === 0){
+
+return }
+
+
+switch (evt.keyCode) {
+case 38:  /* Up arrow was pressed */
+
+if (player1.y - dy > 0){
+player1.y -= dy;
+i += 1
+movesLeft = rollAmount - i;
+showMovesLeft(movesLeft);
+
+player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
+console.log(player1.trackedTurn);
+changeTurn(movesLeft, players)
+
+}
+
+
+
+break;
+case 40:  /* Down arrow was pressed */
+if (player1.y + dy < HEIGHT){
+player1.y += dy;
+i += 1
+movesLeft = rollAmount - i;
+showMovesLeft(movesLeft);
+
+player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
+console.log(player1.trackedTurn);
+
+changeTurn(movesLeft, players)
+}
+
+break;
+case 37:  /* Left arrow was pressed */
+if (player1.x - dx > 0){
+player1.x -= dx;
+i += 1
+movesLeft = rollAmount - i;
+showMovesLeft(movesLeft);
+player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
+console.log(player1.trackedTurn);
+changeTurn(movesLeft, players)
+}
+break;
+case 39:  /* Right arrow was pressed */
+if (player1.x + dx < WIDTH){
+player1.x += dx;
+i +=1
+movesLeft = rollAmount - i;
+showMovesLeft(movesLeft);
+player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
+
+console.log(player1.trackedTurn);
+changeTurn(movesLeft, players)
+}
+break;
+}
+
+}
+
+}
+
+function changeTurn(movesLeft, players) {
+  if (movesLeft === 0) {
+    players[0].isTurn = true;
+    $("#rollDye").show();
+  $(".showRoll").hide();
+  $(".showMoves").hide();
+  // $("#waiting-message").show();
+  }
+}
+
+document.getElementById("rollDye").addEventListener("click", rollDye);
+window.addEventListener('keyup',doKeyDown,true);
+
+window.addEventListener('keyup', function checkCollision(){
+  for (var i = 0; i < placesArray.length; i++) {
+    if (placesArray[i].name !== "Start") {
+
+var playerWidth = (player1.x - 12.5) + (2 * r);
+var playerHeight = (player1.y - 12.5) + (2 * r);
+
+  if (placesArray[i].x < playerWidth  && placesArray[i].x + placesArray[i].width  > player1.x &&
+    placesArray[i].y < playerHeight && placesArray[i].y + placesArray[i].height > player1.y) {
+
+console.log("we are in the " + placesArray[i].name + " area");
+$("#name-of-room").text(placesArray[i].name);
+
+beforeRoom = players[0].trackedTurn[players[0].trackedTurn.length - 2];
+console.log(beforeRoom);
+
+movesLeft = 0;
+          showMovesLeft(movesLeft);
+          console.log(players[0].trackedTurn);
+suggestionDialog.dialog( "open" );
+}
+}
+}
+});
+
+          var suggestionDialog;
           var dialog;
           var form;
            //jquery ui dialog for options box
@@ -281,6 +477,66 @@ placesArray.forEach(drawRoom);
               form[ 0 ].reset();
             }
           });
+
+            suggestionDialog = $( "#suggestion-form" ).dialog({
+      autoOpen: false,
+      height: 400,
+      width: 350,
+      modal: true,
+      buttons: {
+        Submit: function() {
+          var hitSuggestion = [];
+          var suspect = $("#suspects").val();
+          var weapon = $("#weapons").val();
+          var place = $("#name-of-room").text();
+
+          console.log(player2Cards.indexOf(suspect));
+          console.log(player2Cards.indexOf(weapon));
+          console.log(player2Cards.indexOf(place));
+
+          if (player2Cards.indexOf(suspect) > -1) {
+            hitSuggestion.push(suspect);
+
+          }
+           if (player2Cards.indexOf(weapon) > -1) {
+            hitSuggestion.push(weapon);
+
+          }
+           if (player2Cards.indexOf(place) > -1) {
+            hitSuggestion.push(place);
+
+          }
+          shuffle(hitSuggestion);
+          var shownCard = hitSuggestion.pop();
+
+          alert(shownCard);
+          player1.x = beforeRoom.x
+          player1.y = beforeRoom.y
+         players[0].trackedTurn.push(beforeRoom);
+         changeTurn(movesLeft, players);
+           dialog.dialog( "close" );
+
+
+        },
+        Cancel: function() {
+          dialog.dialog( "close" );
+        }
+      },
+      close: function() {
+        form[ 0 ].reset();
+      }
+    });
+
+    form = dialog.find( "form" ).on( "submit", function( event ) {
+      event.preventDefault();
+
+    });
+
+       $( "#suspects" ).selectmenu();
+
+    $( "#weapons" ).selectmenu();
+
+    $("#room").selectmenu();
           form = dialog.find( "form" ).on( "submit", function( event ) {
               event.preventDefault();
           });
@@ -331,7 +587,7 @@ placesArray.forEach(drawRoom);
 
           //function for when player's name is selected by user
           socket.on('nameChosen', function(msg){
-            if ($("#player1").text().endsWith(" ") === true){
+            if ($("#player1").text().endsWith(": ") === true){
 
               $("#player1").append( msg );
               player1.player= msg;
@@ -356,6 +612,7 @@ placesArray.forEach(drawRoom);
 
               if (player1.player !=="" && player2.player !== ""){
                   console.log(players)
+                  player1.isTurn = true;
 
 
 
