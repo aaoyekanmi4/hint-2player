@@ -32,20 +32,25 @@ var socket_ids = []
 
 socket.on('nameChosen', function(msg){
   if (buttonState[socket.id] ==="off"){
-  buttonState[socket.id] = "on"
-    io.emit('nameChosen', msg);
+  buttonState[socket.id] = "on";
 
-    console.log("1st time clicking button")
+    socket.broadcast.emit('nameChosen', msg, socket.id);
+    io.to(socket.id).emit('alreadyPicked', msg, socket.id);
+    console.log("1st time clicking button");
   }
   else {
-    io.to(socket.id).emit('alreadyPicked', "You've already picked a character")
-    console.log("2nd time clicking button")
+    io.to(socket.id).emit('cantPickAgain', "You've already picked a character");
+    console.log("2nd time clicking button");
   }
   });
 
+socket.on('sendCards', function(player1cards, player2cards){
+  if (player1cards !==[]){
+  io.emit('sendCards', player1cards, player2cards);
+}
+})
 
 });
-
 http.listen(3000, function(){
   console.log('listening on *:3000');
 });

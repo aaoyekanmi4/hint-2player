@@ -24,16 +24,17 @@ This text is displayed if your browser does not support HTML5 Canvas.
   <div id="waiting-message">Waiting for player to act ...</div>
 
   <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
-  <div id="waiting">Waiting for player 2</div>
+
         <button  class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
   </div>
+
 
 </div>
 
         <div id="dialog-form" title="Pick a character">
           <form>
-
-            <div class="widget">
+            <div id="waiting">Waiting for player 2</div>
+            <div class="widget characters">
               <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum  <i class="fa fa-circle-o" style="color:purple;" aria-hidden="true"></i></button>
 
               <button class="ui-button ui-widget ui-corner-all" id="Mustard">Col. Mustard  <i class="fa fa-circle-o" style="color:yellow;" aria-hidden="true"></i></button>
@@ -45,9 +46,9 @@ This text is displayed if your browser does not support HTML5 Canvas.
               <button class="ui-button ui-widget ui-corner-all" id="Peacock">Mrs.Peacock  <i class="fa fa-circle-o" style="color:blue" aria-hidden="true"></i></button>
               <button class="ui-button ui-widget ui-corner-all" id="Scarlet">Ms. Scarlet  <i class="fa fa-circle-o" style="color:red;" aria-hidden="true"></i></button>
             </div>
-            <div id="player1">Player 1:<span id="character"></span> </div>
-            <div id="player2">Player 2: <span id="character"></span></div>
+
             <div id ="already-picked"></div>
+            <div id="opponents-choice"></div>
 
           </form>
         </div>
@@ -106,6 +107,10 @@ This text is displayed if your browser does not support HTML5 Canvas.
           var movesLeft;
           var i;
           var beforeRoom;
+
+
+          var player1Cards = [];
+          var player2Cards = [];
 
           function circle(x,y,r, color) {
           context.beginPath();
@@ -278,42 +283,20 @@ This text is displayed if your browser does not support HTML5 Canvas.
             }
           }
 
-          shuffle(places);
-          shuffle(suspects);
-          shuffle(weapons);
-
-
-
-          var who = suspects.pop();
-          var how = weapons.pop();
-          var where = places.pop();
-
-          var allCards = places;
-
-          Array.prototype.push.apply(allCards, suspects);
-          Array.prototype.push.apply(allCards, weapons);
-          console.log(allCards)
 
           function dealCards (array) {
             for (var i = 0; i < array.length; i++) {
 
-              player1.cards.push(array[i]);
+              player1Cards.push(array[i]);
               i += 1
-              player2.cards.push(array[i]);
+              player2Cards.push(array[i]);
             }
+
 
           }
 
-          shuffle(allCards);
-          dealCards(allCards);
 
-$.each(player1.cards, function (index, value) {
-    $('#player-cards').append($('<li/>', {
-        value: value,
-        text : value,
-        class : "ui-widget-content",
-    }));
-});
+
 
 function showMovesLeft (movesLeft) {
   if (typeof movesLeft !== 'undefined'){
@@ -435,6 +418,28 @@ function changeTurn(movesLeft, players) {
   }
 }
 
+  //remove button from avaiable options
+              function removeCharacter(msg){
+              var buttonPressed = $("button:contains('" + msg + "')")
+              var buttonId = (buttonPressed.attr('id'))
+              $("#" + buttonId).remove();
+            }
+
+ function startGame(player1, player2){
+
+               console.log("it worked")
+                player1.isTurn = true;
+                socket.emit('sendCards', player1Cards, player2Cards);
+     socket.on('sendCards', function(player1cards, player2cards){
+Array.prototype.push.apply(player1.cards, player1cards);
+Array.prototype.push.apply(player2.cards, player2cards);
+});
+                console.log(players)
+                 setTimeout(function () {dialog.dialog( "close" )}, 200);
+                 init()
+}
+
+
 document.getElementById("rollDye").addEventListener("click", rollDye);
 window.addEventListener('keyup',doKeyDown,true);
 
@@ -552,7 +557,10 @@ suggestionDialog.dialog( "open" );
 
           //show waiting message if only one user connected
           $("#waiting").show();
+          $(".characters").hide();
           $("#make-moves").hide();
+          //open dialog with options to pick characters
+              dialog.dialog( "open" );
 
 
 
@@ -564,66 +572,113 @@ suggestionDialog.dialog( "open" );
             socket.emit('nameChosen', $(this).text());
           });
 
+
+
+
           //get socket ids from index.js and add them to players object
+
+
           socket.on('grabSocketId', function(data){
+            if (data.length == 1) {
+              shuffle(places);
+          shuffle(suspects);
+          shuffle(weapons);
+
+
+
+          var who = suspects.pop();
+          var how = weapons.pop();
+          var where = places.pop();
+
+          var allCards = places;
+
+          Array.prototype.push.apply(allCards, suspects);
+          Array.prototype.push.apply(allCards, weapons);
+          shuffle(allCards);
+          dealCards(allCards);
+
+console.log(player1Cards);
+
+
+
+
+
+
+            }
             if (data.length === 2) {
-              players[0].id= data[0];
-              players[1].id = data[1];
+              var theres2 = data;
+              player1.id= data[0];
+              player2.id = data[1];
+
 
               //hide waiting since there are now 2 players
               $("#waiting").hide();
+              $(".characters").show();
 
-              //open dialog with options to pick characters
-              dialog.dialog( "open" );
+
+
+
+
+
+
+
+
 
             }
 
+
           });
+
+           // socket.on('sendCards', function(player1cards, player2cards){
+           //    Array.prototype.push.apply(player1.cards, player1cards);
+           //    Array.prototype.push.apply(player2.cards, player2cards);
+           //  })
+
+
+
 
           //function for if user already picked a name and clicked a button
-          socket.on('alreadyPicked', function(msg){
-              $("#already-picked").append(msg);
+          socket.on('alreadyPicked', function(msg, id){
+
+              $("#already-picked").append("You've picked " + msg);
+              for (var i = 0; i < players.length; i++) {
+                if (players[i].id === id){
+                  players[i].player = msg;
+                  getColor(players[i])
+                }
+              }
+              console.log(players);
+                if (player1.player !=="" && player2.player !== ""){
+startGame(player1, player2)
+}
+              removeCharacter(msg)
           });
 
-          //function for when player's name is selected by user
-          socket.on('nameChosen', function(msg){
-            if ($("#player1").text().endsWith(": ") === true){
-
-              $("#player1").append( msg );
-              player1.player= msg;
-
-              //get fillstyle for character drawing
-              getColor(player1);
-
-              //remove button from avaiable options
-              var buttonPressed = $("button:contains('" + msg + "')")
-              var buttonId = (buttonPressed.attr('id'))
-              $("#" + buttonId).remove();
-            }
-            else {
-              $("#player2").append(msg);
-              player2.player =msg;
-
-              getColor(player2);
-
-              var buttonPressed = $("button:contains('" + msg + "')")
-              var buttonId = (buttonPressed.attr('id'))
-              $("#" + buttonId).remove();
-
-              if (player1.player !=="" && player2.player !== ""){
-                  console.log(players)
-                  player1.isTurn = true;
 
 
-
-                setTimeout(function () {dialog.dialog( "close" )}, 200);
-                init()
+           socket.on('nameChosen', function(msg, id){
+            $("#opponents-choice").append("Your opponent picked " + msg);
+             for (var i = 0; i < players.length; i++) {
+                if (players[i].id === id){
+                  players[i].player = msg;
+              getColor(players[i]);
+                }
               }
+              console.log(players);
+                if (player1.player !=="" && player2.player !== ""){
+startGame(player1, player2)
+}
+              removeCharacter(msg);
+              });
 
-            }
-         return players
-        });
-      });
+
+
+
+
+
+
+             });
+
 
     </script>
 
