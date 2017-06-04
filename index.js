@@ -1,3 +1,59 @@
+
+var library = {name: "Library", x:0,y:0,width:300,height:150};
+
+          var study = {name:"Study", x:350,y:0,width:250,height:150};
+          var hall= {name:"Hall", x:700,y:0,width:125,height:200};
+          var lounge = {name:"Lounge", x:875,y:0,width:225,height:175};
+          var diningRoom = {name:"Dining Room", x:875,y:250,width:225,height:125};
+          var kitchen = {name: "Kitchen", x:625,y:450,width:250,height:150};
+          var ballroom = {name:"Ballroom", x:275,y:375,width:225,height:225};
+          var conservatory = {name: "Conservatory", x:0,y:300,width:225,height:225};
+          var billiard = {name: "Billiard Room", x:925,y:425,width:175,height:175};
+
+          var placesArray =[library, study, hall, lounge, diningRoom, kitchen, ballroom, conservatory, billiard];
+
+          var places = [];
+
+          placesArray.forEach( function(place) {
+            places.push(place.name);
+          });
+
+          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
+
+          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
+
+          //Fisher Yates shuffle
+          function shuffle (array) {
+            var i = 0
+              , j = 0
+              , temp = null
+
+            for (i = array.length - 1; i > 0; i -= 1) {
+              j = Math.floor(Math.random() * (i + 1))
+              temp = array[i]
+              array[i] = array[j]
+              array[j] = temp
+            }
+          }
+          var player1Cards = [];
+          var player2Cards = [];
+
+
+          function dealCards (array) {
+            for (var i = 0; i < array.length; i++) {
+
+              player1Cards.push(array[i]);
+              i += 1
+              player2Cards.push(array[i]);
+            }
+
+
+          }
+
+
+
+
+
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
@@ -7,9 +63,26 @@ res.sendFile(__dirname + '/index.html');
 });
 
 var buttonState = {}
-io.on('connection', function(socket){
 var socket_ids = []
+   shuffle(places);
+          shuffle(suspects);
+          shuffle(weapons);
 
+
+
+          var who = suspects.pop();
+          var how = weapons.pop();
+          var where = places.pop();
+
+          var allCards = places;
+
+          Array.prototype.push.apply(allCards, suspects);
+          Array.prototype.push.apply(allCards, weapons);
+          shuffle(allCards);
+          dealCards(allCards);
+
+
+io.on('connection', function(socket){
 
      Object.keys(io.sockets.sockets);
      Object.keys(io.sockets.sockets).forEach(function(id) {
@@ -25,8 +98,12 @@ var socket_ids = []
      console.log(socket_ids);
 
      io.emit('grabSocketId', socket_ids);
+     console.log(player1Cards);
+console.log(player2Cards);
+console.log(socket_ids[0])
 
-
+  io.to(socket_ids[0]).emit('sendCards', player1Cards);
+  io.to(socket_ids[1]).emit('sendCards', player2Cards);
 
 
 
@@ -38,17 +115,14 @@ socket.on('nameChosen', function(msg){
     io.to(socket.id).emit('alreadyPicked', msg, socket.id);
     console.log("1st time clicking button");
   }
-  else {
+  else  {
     io.to(socket.id).emit('cantPickAgain', "You've already picked a character");
     console.log("2nd time clicking button");
   }
   });
 
-socket.on('sendCards', function(player1cards, player2cards){
-  if (player1cards !==[]){
-  io.emit('sendCards', player1cards, player2cards);
-}
-})
+
+
 
 });
 http.listen(3000, function(){

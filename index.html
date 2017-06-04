@@ -429,11 +429,8 @@ function changeTurn(movesLeft, players) {
 
                console.log("it worked")
                 player1.isTurn = true;
-                socket.emit('sendCards', player1Cards, player2Cards);
-     socket.on('sendCards', function(player1cards, player2cards){
-Array.prototype.push.apply(player1.cards, player1cards);
-Array.prototype.push.apply(player2.cards, player2cards);
-});
+
+
                 console.log(players)
                  setTimeout(function () {dialog.dialog( "close" )}, 200);
                  init()
@@ -579,32 +576,7 @@ suggestionDialog.dialog( "open" );
 
 
           socket.on('grabSocketId', function(data){
-            if (data.length == 1) {
-              shuffle(places);
-          shuffle(suspects);
-          shuffle(weapons);
 
-
-
-          var who = suspects.pop();
-          var how = weapons.pop();
-          var where = places.pop();
-
-          var allCards = places;
-
-          Array.prototype.push.apply(allCards, suspects);
-          Array.prototype.push.apply(allCards, weapons);
-          shuffle(allCards);
-          dealCards(allCards);
-
-console.log(player1Cards);
-
-
-
-
-
-
-            }
             if (data.length === 2) {
               var theres2 = data;
               player1.id= data[0];
@@ -616,23 +588,21 @@ console.log(player1Cards);
               $(".characters").show();
 
 
-
-
-
-
-
-
-
+    socket.on('sendCards', function(cards){
+   $.each(cards, function (index, value) {
+    $('#player-cards').append($('<li/>', {
+        value: value,
+        text : value,
+        class: "ui-widget-content"
+    }))
+})
+     });
 
             }
 
 
           });
 
-           // socket.on('sendCards', function(player1cards, player2cards){
-           //    Array.prototype.push.apply(player1.cards, player1cards);
-           //    Array.prototype.push.apply(player2.cards, player2cards);
-           //  })
 
 
 
