@@ -62,8 +62,9 @@ app.get('/', function(req, res){
 res.sendFile(__dirname + '/index.html');
 });
 
-var buttonState = {}
-var socket_ids = []
+var buttonState = {};
+var socket_ids = [];
+var turnState = {};
    shuffle(places);
           shuffle(suspects);
           shuffle(weapons);
@@ -93,19 +94,29 @@ io.on('connection', function(socket){
 
 
 });
+     turnState[socket.id] = false;
      buttonState[socket.id] = "off";
      console.log(buttonState);
+     console.log(turnState);
      console.log(socket_ids);
 
      io.emit('grabSocketId', socket_ids);
-     console.log(player1Cards);
-console.log(player2Cards);
-console.log(socket_ids[0])
+
+
+io.emit('addCards', player1Cards, player2Cards);
 
   io.to(socket_ids[0]).emit('sendCards', player1Cards);
   io.to(socket_ids[1]).emit('sendCards', player2Cards);
 
+socket.on('playerMoved', function(x, y){
+  io.emit('playerMoved', x, y);
+  console.log(y)
+})
 
+socket.on('changeTurn', function(turnValue, id){
+  turnState[id] = turnValue;
+  console.log(turnState);
+})
 
 socket.on('nameChosen', function(msg){
   if (buttonState[socket.id] ==="off"){
@@ -113,11 +124,11 @@ socket.on('nameChosen', function(msg){
 
     socket.broadcast.emit('nameChosen', msg, socket.id);
     io.to(socket.id).emit('alreadyPicked', msg, socket.id);
-    console.log("1st time clicking button");
+
   }
   else  {
     io.to(socket.id).emit('cantPickAgain', "You've already picked a character");
-    console.log("2nd time clicking button");
+
   }
   });
 

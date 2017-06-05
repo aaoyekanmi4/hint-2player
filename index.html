@@ -12,12 +12,23 @@
 
       <section>
 
-<div>
+
+<div id="shared-space">
+ <div style="width: 1100px; display: none;" id="notebook">
+    <canvas id="myCanvas" height= 600 width=400></canvas>
+    <div class="notes" style="float:right;">
+    <div style="width: 100px; height: 50px; font-size: 45px;">Notes</div>
+    <textarea style="; width: 550px; height: 540px; border-width: 4px; border-color: black; "></textarea>
+    </div>
+
+
+    </div>
 <canvas id="canvas" width="1100" height="600">
 This text is displayed if your browser does not support HTML5 Canvas.
 </canvas>
 
-<div style="float: right; width:210px; height: 600px" id="make-moves">
+
+<div style="float: right; width:210px; height: 600px;" id="make-moves">
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
   <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
   <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
@@ -25,7 +36,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
   <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
 
-        <button  class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
+        <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
   </div>
 
 
@@ -88,6 +99,156 @@ This text is displayed if your browser does not support HTML5 Canvas.
       <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
       <script src="https://use.fontawesome.com/6791ba42d9.js"></script>
       <script>
+
+       function matrix( rows, cols, defaultValue){
+
+  var grid = [];
+
+  // Creates all lines:
+  for(var i=0; i < rows; i++){
+
+      // Creates an empty line
+      grid.push([]);
+
+//j set to 5 to blank out row labels
+      for(var j=6; j < cols; j++){
+        // Initializes:
+        grid[i][j] = defaultValue;
+      }
+  }
+
+return grid;
+}
+
+function fill(s, row, column) {
+        context.fillStyle = s;
+        var innerSize = size-2;
+        context.fillRect(((row * size) + 1), ((column * size) + 1), innerSize, innerSize);
+    }
+
+var grid = matrix(24, 14, 0);
+;
+
+      var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+      var gridWidth = 350;
+      var gridHeight = 600;
+      var movingPlayer
+
+      context.beginPath();
+      context.lineWidth = 4;
+      var offset = 0;
+      context.rect(offset, offset, gridWidth, gridHeight);
+
+
+      context.strokeStyle = 'black';
+      context.stroke();
+      var startingPoint = (gridHeight + offset) - 25;
+      var size = 25;
+
+
+ //      Draw lines horizontally
+      for (var i =0; i < 25; i++) {
+        context.beginPath();
+        context.lineWidth = 1;
+        context.moveTo(offset, startingPoint);
+        context.lineTo(offset + gridWidth, startingPoint);
+        context.stroke();
+        startingPoint = startingPoint - size;
+      }
+     var startingPoint = (gridWidth + offset) - 25;
+      //Draw lines vertically
+      for (var i =0; i < 8; i++) {
+        context.beginPath();
+        context.lineWidth = 1;
+        context.moveTo(startingPoint, 0);
+        context.lineTo(startingPoint, 600);
+        context.stroke();
+        startingPoint = startingPoint - size
+      }
+//add weapons
+      var weapons = ["knife", "candlestick", "wrench", "revolver", "lead pipe", "rope" ]
+
+var startingPoint = gridHeight + offset;
+for (var i = 0; i < weapons.length; i ++) {
+  context.font = "15px Arial";
+  context.fillStyle = "black";
+ context.textAlign = "left";
+  context.fillText(weapons[i], offset+ 5, startingPoint -5);
+  startingPoint = startingPoint - size;
+ }
+
+ context.fillStyle = "black";
+ context.fillRect(0, 425, 350, 25)
+ context.font = "20px san-serif";
+ context.fillStyle= "white";
+ context.fillText("Weapons", offset, startingPoint -5);
+//add suspects
+var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. White"]
+var startingPoint = 425 + offset;
+for (var i = 0; i < suspects.length; i ++) {
+  context.font = "15px Arial";
+  context.fillStyle = "black";
+ context.textAlign = "left";
+  context.fillText(suspects[i], offset+ 5, startingPoint -5);
+  startingPoint = startingPoint - size;
+ }
+
+ context.fillStyle = "black";
+ context.fillRect(0, 250, 350, 25)
+ context.font = "20px san-serif";
+ context.fillStyle= "white";
+ context.fillText("Suspects", offset, startingPoint -5);
+
+ //add locations
+
+       var locations = ["hall", "study", "dining room", "ballroom", "billiard", "conservatory", "lounge", "kitchen", "library"]
+
+var startingPoint = 250 + offset;
+for (var i = 0; i < locations.length; i ++) {
+  context.font = "15px Arial";
+  context.fillStyle = "black";
+ context.textAlign = "left";
+  context.fillText(locations[i], offset+ 5, startingPoint -5);
+  startingPoint = startingPoint - size;
+ }
+
+ context.fillStyle = "black";
+ context.fillRect(0, 0, 350, 25)
+ context.font = "20px san-serif";
+ context.fillStyle= "white";
+ context.fillText("Locations", offset, startingPoint -5);
+
+
+      function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: evt.clientX - rect.left,
+          y: evt.clientY - rect.top
+        };
+      }
+
+      var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+
+      canvas.addEventListener('click', function(evt) {
+        var mousePos = getMousePos(canvas, evt);
+        var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
+
+        var column = Math.floor(mousePos.x/size);
+        var row = Math.floor(mousePos.y/size);
+        console.log(column + "," + row);
+        console.log(column * size)
+        console.log(row * size)
+        if (grid[row][column] === 0) {
+            fill('black', column, row)
+            grid[row][column]=1
+        }
+         else if(grid[row][column] === 1){
+fill('white', column, row)
+grid[row][column] =0
+        }
+      });
 
         $( function() {
 
@@ -296,8 +457,6 @@ This text is displayed if your browser does not support HTML5 Canvas.
           }
 
 
-
-
 function showMovesLeft (movesLeft) {
   if (typeof movesLeft !== 'undefined'){
     $("#moves-left").text(movesLeft)
@@ -338,7 +497,22 @@ function rollDye () {
 
 }
 
+$("#view-notebook").click(function(){
+  $("#notebook").slideToggle( "slow" );
+
+
+  });
+
+
 function doKeyDown(evt){
+ if (player1.isTurn === true) {
+  movingPlayer = player1;
+ }
+ else if (player2.isTurn === true) {
+  movingPlayer = player2;
+ }
+
+
 
 if (typeof rollAmount !== 'undefined') {
 
@@ -350,63 +524,76 @@ return }
 switch (evt.keyCode) {
 case 38:  /* Up arrow was pressed */
 
-if (player1.y - dy > 0){
-player1.y -= dy;
+if (movingPlayer.y - dy > 0){
+movingPlayer.y -= dy;
 i += 1
+
+
+
+console.log(movingPlayer.y);
 movesLeft = rollAmount - i;
 showMovesLeft(movesLeft);
 
-player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
-console.log(player1.trackedTurn);
+movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
+console.log(movingPlayer.trackedTurn);
 changeTurn(movesLeft, players)
+ }
 
-}
+
 
 
 
 break;
 case 40:  /* Down arrow was pressed */
-if (player1.y + dy < HEIGHT){
-player1.y += dy;
-i += 1
-movesLeft = rollAmount - i;
-showMovesLeft(movesLeft);
 
-player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
-console.log(player1.trackedTurn);
+if (movingPlayer.y + dy < HEIGHT){
+movingPlayer.y += dy;
+i += 1
+
+
+
+movesLeft = rollAmount - i;
+movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
+console.log(movingPlayer.trackedTurn);
 
 changeTurn(movesLeft, players)
+showMovesLeft(movesLeft);
+
+
 }
 
 break;
 case 37:  /* Left arrow was pressed */
-if (player1.x - dx > 0){
-player1.x -= dx;
+if (movingPlayer.x - dx > 0){
+movingPlayer.x -= dx;
 i += 1
 movesLeft = rollAmount - i;
 showMovesLeft(movesLeft);
-player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
-console.log(player1.trackedTurn);
+movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
+console.log(movingPlayer.trackedTurn);
 changeTurn(movesLeft, players)
 }
 break;
 case 39:  /* Right arrow was pressed */
-if (player1.x + dx < WIDTH){
-player1.x += dx;
+if (movingPlayer.x + dx < WIDTH){
+movingPlayer.x += dx;
 i +=1
 movesLeft = rollAmount - i;
 showMovesLeft(movesLeft);
-player1.trackedTurn.push({x:  + player1.x, y: + player1.y });
+movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
 
-console.log(player1.trackedTurn);
+console.log(movingPlayer.trackedTurn);
 changeTurn(movesLeft, players)
 }
 break;
 }
 
+
+socket.emit('playerMoved', movingPlayer.x, movingPlayer.y)
 }
 
 }
+
 
 function changeTurn(movesLeft, players) {
   if (movesLeft === 0) {
@@ -429,7 +616,7 @@ function changeTurn(movesLeft, players) {
 
                console.log("it worked")
                 player1.isTurn = true;
-
+                socket.emit('changeTurn', player1.isTurn, player1.id)
 
                 console.log(players)
                  setTimeout(function () {dialog.dialog( "close" )}, 200);
@@ -439,6 +626,10 @@ function changeTurn(movesLeft, players) {
 
 document.getElementById("rollDye").addEventListener("click", rollDye);
 window.addEventListener('keyup',doKeyDown,true);
+window.addEventListener('keyup',socket.on('playerMoved', function(x, y){
+  player1.y = y;
+  player1.x = x;
+}));
 
 window.addEventListener('keyup', function checkCollision(){
   for (var i = 0; i < placesArray.length; i++) {
@@ -520,13 +711,9 @@ suggestionDialog.dialog( "open" );
 
 
         },
-        Cancel: function() {
-          dialog.dialog( "close" );
-        }
+
       },
-      close: function() {
-        form[ 0 ].reset();
-      }
+
     });
 
     form = dialog.find( "form" ).on( "submit", function( event ) {
@@ -586,7 +773,11 @@ suggestionDialog.dialog( "open" );
               //hide waiting since there are now 2 players
               $("#waiting").hide();
               $(".characters").show();
-
+socket.on('addCards', function(cards1, cards2){
+player1.cards = cards1;
+player2.cards=cards2;
+console.log(players)
+});
 
     socket.on('sendCards', function(cards){
    $.each(cards, function (index, value) {
