@@ -177,6 +177,10 @@ socket.on('changeTurn', function(){
 
 })
 
+socket.on('insideRoom', function(character){
+  socket.broadcast.emit('insideRoom', character);
+})
+
 
 });
 http.listen(3000, function(){

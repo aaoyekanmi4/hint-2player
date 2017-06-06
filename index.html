@@ -6,6 +6,11 @@
       <title>Choose a character</title>
       <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/jquery-ui.min.css" rel="stylesheet">
        <link href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/theme.min.css" rel="stylesheet">
+       <style type="text/css">
+         .ui-dialog-titlebar-close{
+    display: none;
+}
+       </style>
     </head>
 
     <body>
@@ -29,8 +34,10 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
 
 <div style="float: right; width:210px; height: 600px;" id="make-moves">
+<div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
+<div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
-<div class="ui-widget-header" id="waiting-message" style="padding: 0; font-size:30px">It is your opponent's turn</div>
+
   <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
   <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
 
@@ -498,7 +505,7 @@ $("#view-notebook").click(function(){
   });
 
 function changeTurn(movesLeft, player){
-  if (movesLeft === 0){
+  if (movesLeft === 0 && player.inRoom === false){
     socket.emit('changeTurn');
   }
 }
@@ -634,7 +641,6 @@ window.addEventListener('keyup',socket.on('playerMoved', function(x, y, id){
 
 window.addEventListener('keyup', function checkCollision(){
   for (var i = 0; i < placesArray.length; i++) {
-    if (placesArray[i].name !== "Start") {
 
 var playerWidth = (player.x - 12.5) + (2 * r);
 var playerHeight = (player.y - 12.5) + (2 * r);
@@ -647,13 +653,16 @@ $("#name-of-room").text(placesArray[i].name);
 
 beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
 console.log(beforeRoom);
-
+player.inRoom = true;
+console.log(player)
 movesLeft = 0;
+socket.emit('trackRoll', movesLeft, rollAmount)
+socket.emit('insideRoom', player.character)
 
           console.log(player.trackedTurn);
 suggestionDialog.dialog( "open" );
 }
-}
+
 }
 });
 
@@ -679,36 +688,38 @@ suggestionDialog.dialog( "open" );
       modal: true,
       buttons: {
         Submit: function() {
-          var hitSuggestion = [];
-          var suspect = $("#suspects").val();
-          var weapon = $("#weapons").val();
-          var place = $("#name-of-room").text();
+          suggestionDialog.dialog( "close" );
+          movesLeft = 0;
+         //  var hitSuggestion = [];
+         //  var suspect = $("#suspects").val();
+         //  var weapon = $("#weapons").val();
+         //  var place = $("#name-of-room").text();
 
-          console.log(player2Cards.indexOf(suspect));
-          console.log(player2Cards.indexOf(weapon));
-          console.log(player2Cards.indexOf(place));
+         //  console.log(player2Cards.indexOf(suspect));
+         //  console.log(player2Cards.indexOf(weapon));
+         //  console.log(player2Cards.indexOf(place));
 
-          if (player2Cards.indexOf(suspect) > -1) {
-            hitSuggestion.push(suspect);
+         //  if (player2Cards.indexOf(suspect) > -1) {
+         //    hitSuggestion.push(suspect);
 
-          }
-           if (player2Cards.indexOf(weapon) > -1) {
-            hitSuggestion.push(weapon);
+         //  }
+         //   if (player2Cards.indexOf(weapon) > -1) {
+         //    hitSuggestion.push(weapon);
 
-          }
-           if (player2Cards.indexOf(place) > -1) {
-            hitSuggestion.push(place);
+         //  }
+         //   if (player2Cards.indexOf(place) > -1) {
+         //    hitSuggestion.push(place);
 
-          }
-          shuffle(hitSuggestion);
-          var shownCard = hitSuggestion.pop();
+         //  }
+         //  shuffle(hitSuggestion);
+         //  var shownCard = hitSuggestion.pop();
 
-          alert(shownCard);
+         //  alert(shownCard);
           player.x = beforeRoom.x
           player.y = beforeRoom.y
-         players[0].trackedTurn.push(beforeRoom);
-         changeTurn(movesLeft, player);
-           dialog.dialog( "close" );
+         player.trackedTurn.push(beforeRoom);
+         // changeTurn(movesLeft, player);
+         //   dialog.dialog( "close" );
 
 
         },
@@ -842,7 +853,7 @@ socket.on('startTurn', function(turnValue){
   $("#rollDye").show();
   $(".showRoll").hide();
   $(".showMoves").hide();
-  $("#waiting-message").hide();
+  $("#whoseTurn").text("Your turn");
 
 })
 
@@ -851,13 +862,23 @@ socket.on('notTurn', function(turnValue){
     $("#rollDye").hide();
   $(".showRoll").show();
   $(".showMoves").show();
-  $("#waiting-message").show();
+  console.log(opponent.character);
+  $("#whoseTurn").text(opponent.character.toString() + "'s turn");
   $("#rolled-number").text('');
     $("#moves-left").text('');
 })
 
 socket.on('startGame', function(){
   init()
+  setTimeout(dialog.dialog('close'), 2000);
+
+});
+
+socket.on('insideRoom', function(character){
+$("#awaitSuggestion").text('Wait for ' + character + ' to make a suggestion.');
+$("#rolled-number").hide();
+    $("#moves-left").hide();
+    $("#whoseTurn").hide();
 });
 
 
