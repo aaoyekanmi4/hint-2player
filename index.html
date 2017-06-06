@@ -33,7 +33,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
 </canvas>
 
 
-<div style="float: right; width:210px; height: 600px;" id="make-moves">
+<div style="float: right; width:210px; height: 600px; position: absolute;" id="make-moves">
 <div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
 <div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
@@ -659,6 +659,7 @@ movesLeft = 0;
 socket.emit('trackRoll', movesLeft, rollAmount)
 socket.emit('insideRoom', player.character)
 
+
           console.log(player.trackedTurn);
 suggestionDialog.dialog( "open" );
 }
@@ -694,6 +695,7 @@ suggestionDialog.dialog( "open" );
           var suspect = $("#suspects").val();
           var weapon = $("#weapons").val();
           var place = $("#name-of-room").text();
+          socket.emit('changeTurn')
 
 socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
@@ -717,6 +719,10 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
           player.x = beforeRoom.x
           player.y = beforeRoom.y
           socket.emit('playerMoved', player.x, player.y);
+          player.inRoom = false;
+
+
+
 
          player.trackedTurn.push(beforeRoom)
          // changeTurn(movesLeft, player);
@@ -884,8 +890,9 @@ $("#rolled-number").hide();
 
 socket.on('madeSuggestion', function(suspect, weapon, place, id){
   alert("It was " + suspect + " in the " + place + " with the " + weapon);
-$("#awaitSuggestion").text('Click highlighted card to send to player');
 
+$("#awaitSuggestion").text('Click highlighted card to send to player');
+$("#rollDye").hide();
      if (player.cards.indexOf(suspect) > -1) {
       var suspectSelected = $("li:contains('" + suspect + "')");
             suspectSelected.css("background", "blue");
@@ -897,7 +904,13 @@ $("#awaitSuggestion").text('Click highlighted card to send to player');
             suspectSelected.click(function(){
   socket.emit('showCard', suspect, id);
    $(".card").css("background", "")
-   socket.emit('changeTurn')
+     $("#awaitSuggestion").text('');
+$("#rolled-number").show();
+    $("#moves-left").show();
+    $("#whoseTurn").show();
+    $("#rollDye").show();
+
+   // socket.emit('changeTurn')
 })
 
           }
@@ -912,7 +925,13 @@ $("#awaitSuggestion").text('Click highlighted card to send to player');
 weaponSelected.click(function(){
   socket.emit('showCard', weapon, id);
    $(".card").css("background", "")
-   socket.emit('changeTurn')
+     $("#awaitSuggestion").text('');
+$("#rolled-number").show();
+    $("#moves-left").show();
+    $("#whoseTurn").show();
+    $("#rollDye").show();
+
+   // socket.emit('changeTurn')
 })
 
           }
@@ -927,7 +946,13 @@ weaponSelected.click(function(){
 placeSelected.click(function(){
   socket.emit('showCard', place, id);
   $(".card").css("background", "")
-  socket.emit('changeTurn')
+  $("#awaitSuggestion").text('');
+$("#rolled-number").show();
+    $("#moves-left").show();
+    $("#whoseTurn").show();
+    $("#rollDye").show();
+
+  // socket.emit('changeTurn')
 
 })
           }
@@ -935,7 +960,7 @@ placeSelected.click(function(){
 })
  socket.on('showCard', function(card) {
 alert(card);
-socket.emit('changeTurn')
+
  });
 
              });
