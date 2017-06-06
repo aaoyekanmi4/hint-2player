@@ -62,9 +62,12 @@ app.get('/', function(req, res){
 res.sendFile(__dirname + '/index.html');
 });
 
+
 var buttonState = {};
 var socket_ids = [];
 var turnState = {};
+var characterList = [];
+
    shuffle(places);
           shuffle(suspects);
           shuffle(weapons);
@@ -100,39 +103,79 @@ io.on('connection', function(socket){
      console.log(turnState);
      console.log(socket_ids);
 
-     io.emit('grabSocketId', socket_ids);
+
+if (socket_ids.length === 2) {
+  player1x = 537.5;
+  player1y = 312.5;
+
+  player2x = 512.5;
+  player2y = 312.5;
+    io.to(socket_ids[0]).emit('grabSocketId', socket_ids[0], player1Cards, player1x, player1y);
+    io.to(socket_ids[1]).emit('grabSocketId', socket_ids[1], player2Cards,player2x, player2y);
+
+}
+
+socket.on('opponentInfo', function(id, x, y, color, character){
+  socket.broadcast.emit('opponentInfo', id, x, y, color, character)
+
+})
 
 
-io.emit('addCards', player1Cards, player2Cards);
 
-  io.to(socket_ids[0]).emit('sendCards', player1Cards);
-  io.to(socket_ids[1]).emit('sendCards', player2Cards);
 
 socket.on('playerMoved', function(x, y){
-  io.emit('playerMoved', x, y);
-  console.log(y)
+
+  io.emit('playerMoved', x, y, socket.id);
+
 })
 
-socket.on('changeTurn', function(turnValue, id){
-  turnState[id] = turnValue;
-  console.log(turnState);
+socket.on('trackRoll', function(movesLeft, rollAmount){
+  io.emit('showMovesLeft', movesLeft, rollAmount);
 })
+
+
+
+socket.on('startGame', function(character){
+  characterList.push(character);
+  if (characterList.length === 2){
+    turnState[socket_ids[0]] = true;
+    turnState[socket_ids[1]] = false;
+
+    io.to(socket_ids[0]).emit('startTurn', turnState[socket_ids[0]]);
+    io.to(socket_ids[1]).emit('notTurn', turnState[socket_ids[1]]);
+    io.emit('startGame')
+
+  }
+});
+
 
 socket.on('nameChosen', function(msg){
   if (buttonState[socket.id] ==="off"){
   buttonState[socket.id] = "on";
 
-    socket.broadcast.emit('nameChosen', msg, socket.id);
-    io.to(socket.id).emit('alreadyPicked', msg, socket.id);
-
-  }
-  else  {
-    io.to(socket.id).emit('cantPickAgain', "You've already picked a character");
+    socket.broadcast.emit('opponentPicked', msg, socket.id);
+    io.to(socket.id).emit('selectCharacter', msg, socket.id);
 
   }
   });
 
 
+
+socket.on('changeTurn', function(){
+  turnState[socket_ids[0]] = (!turnState[socket_ids[0]]);
+    turnState[socket_ids[1]] = (!turnState[socket_ids[1]]);
+    for (var i = 0; i < socket_ids.length; i++) {
+      if (turnState[socket_ids[i]] ===true){
+        io.to(socket_ids[i]).emit('startTurn', turnState[socket_ids[i]]);
+      }
+      else{
+        io.to(socket_ids[i]).emit('notTurn', turnState[socket_ids[i]]);
+      }
+    }
+
+
+
+})
 
 
 });

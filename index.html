@@ -30,9 +30,10 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
 <div style="float: right; width:210px; height: 600px;" id="make-moves">
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
+<div class="ui-widget-header" id="waiting-message" style="padding: 0; font-size:30px">It is your opponent's turn</div>
   <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
   <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
-  <div id="waiting-message">Waiting for player to act ...</div>
+
 
   <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
 
@@ -134,6 +135,7 @@ var grid = matrix(24, 14, 0);
       var gridWidth = 350;
       var gridHeight = 600;
       var movingPlayer
+
 
       context.beginPath();
       context.lineWidth = 4;
@@ -270,7 +272,7 @@ grid[row][column] =0
           var beforeRoom;
 
 
-          var player1Cards = [];
+          var playerCards = [];
           var player2Cards = [];
 
           function circle(x,y,r, color) {
@@ -340,8 +342,9 @@ grid[row][column] =0
           context.strokeStyle = "black";
           rect(0,0,WIDTH,HEIGHT);
 
-          circle(player1.x, player1.y, r, player1.color);
-          circle(player2.x, player2.y, r, player2.color);
+          circle(player.x, player.y, r, player.color);
+          circle(opponent.x, opponent.y, r, opponent.color);
+
           drawGrid(HEIGHT, WIDTH, size);
           placesArray.forEach(drawRoom);
 
@@ -351,59 +354,55 @@ grid[row][column] =0
           canvas = document.getElementById("canvas");
           context = canvas.getContext("2d");
           $("#make-moves").show();
-                 $("#rollDye").show();
-  $(".showRoll").hide();
-  $(".showMoves").hide();
-  $("#waiting-message").hide();
-          return setInterval(draw, 10);
+              return setInterval(draw, 10);
           }
 
 
           //calls io from index.js
           var socket = io();
 
-          //object containing player1 and player2
-          var players = [{
-                        player:"",
+          //object containing player and player2
+          var player = {
+                        character:"",
                         id:"",
                         isTurn:false,
                         inRoom:false,
                         cards: [],
                         trackedTurn : [],
-                        x:537.5,
-                        y: 312.5,
-                        color: ""
-                        },
-                         {
-                        player:"",
-                        id:"",
-                        isTurn:false,
-                        inRoom:false,
-                        cards: [],
-                        trackedTurn : [],
-                        x:512.5,
-                        y: 312.5,
+                        x:"",
+                        y: "",
                         color: ""
                         }
-                        ]
 
-          player1 = players[0]
-          player2 = players[1]
+            var opponent = {
+                        character:"",
+                        id:"",
+                        isTurn:false,
+                        inRoom:false,
+                        trackedTurn : [],
+                        x:"",
+                        y: "",
+                        color: ""
+                        }
 
-          function getColor (player1) {
-            if (player1.player === "Col. Mustard  "){
-                  player1.color = "yellow";
+
+
+
+
+          function getColor (player) {
+            if (player.character === "Col. Mustard  "){
+                  player.color = "yellow";
                 }
-                 else if (player1.player === "Mrs.Peacock  "){
-                  player1.color = "blue";
-                } else if (player1.player === "Mr. Green  "){
-                  player1.color= "green";
-                } else if (player1.player === "Prof. Plum  "){
-                  player1.color = "purple";
-                } else if (player1.player === "Mrs. Black  "){
-                  player1.color = "black";
-                } else if (player1.player === "Ms. Scarlet  "){
-                  player1.color = "red";
+                 else if (player.character === "Mrs.Peacock  "){
+                  player.color = "blue";
+                } else if (player.character === "Mr. Green  "){
+                  player.color= "green";
+                } else if (player.character === "Prof. Plum  "){
+                  player.color = "purple";
+                } else if (player.character === "Mrs. Black  "){
+                  player.color = "black";
+                } else if (player.character === "Ms. Scarlet  "){
+                  player.color = "red";
                 }
           }
 
@@ -448,7 +447,7 @@ grid[row][column] =0
           function dealCards (array) {
             for (var i = 0; i < array.length; i++) {
 
-              player1Cards.push(array[i]);
+              playerCards.push(array[i]);
               i += 1
               player2Cards.push(array[i]);
             }
@@ -457,19 +456,14 @@ grid[row][column] =0
           }
 
 
-function showMovesLeft (movesLeft) {
+socket.on('showMovesLeft', function(movesLeft, rollAmount) {
   if (typeof movesLeft !== 'undefined'){
+    $("#rolled-number").text(rollAmount);
     $("#moves-left").text(movesLeft)
   }
-}
+});
 
-if (players[0].isTurn ===true){
-  $("#rollDye").show();
-  $(".showRoll").hide();
-  $(".showMoves").hide();
-  $("#waiting-message").hide();
 
-}
 
 
 
@@ -477,7 +471,7 @@ if (players[0].isTurn ===true){
 
 function rollDye () {
     rollAmount = Math.floor((Math.random() * 12) + 1);
-    console.log(rollAmount);
+
 
 
   $("#rollDye").hide();
@@ -486,9 +480,9 @@ function rollDye () {
 
     i =0;
     movesLeft = rollAmount;
-    showMovesLeft(movesLeft);
+    socket.emit('trackRoll', movesLeft, rollAmount)
     console.log(rollAmount.toString());
-    $("#rolled-number").text("You rolled a " + rollAmount.toString());
+
     // if (movesLeft === 0) {
     //   players[0].isTurn = false;
     // }
@@ -503,14 +497,18 @@ $("#view-notebook").click(function(){
 
   });
 
+function changeTurn(movesLeft, player){
+  if (movesLeft === 0){
+    socket.emit('changeTurn');
+  }
+}
+
 
 function doKeyDown(evt){
- if (player1.isTurn === true) {
-  movingPlayer = player1;
- }
- else if (player2.isTurn === true) {
-  movingPlayer = player2;
- }
+ if (player.isTurn === true) {
+
+
+
 
 
 
@@ -520,23 +518,21 @@ if (i === rollAmount || movesLeft === 0){
 
 return }
 
-
 switch (evt.keyCode) {
 case 38:  /* Up arrow was pressed */
 
-if (movingPlayer.y - dy > 0){
-movingPlayer.y -= dy;
+if (player.y - dy > 0){
+player.y -= dy;
 i += 1
 
 
-
-console.log(movingPlayer.y);
+console.log(player.y);
 movesLeft = rollAmount - i;
-showMovesLeft(movesLeft);
 
-movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
-console.log(movingPlayer.trackedTurn);
-changeTurn(movesLeft, players)
+socket.emit('trackRoll', movesLeft, rollAmount)
+player.trackedTurn.push({x:  + player.x, y: + player.y });
+console.log(player.trackedTurn);
+changeTurn(movesLeft, player)
  }
 
 
@@ -546,64 +542,56 @@ changeTurn(movesLeft, players)
 break;
 case 40:  /* Down arrow was pressed */
 
-if (movingPlayer.y + dy < HEIGHT){
-movingPlayer.y += dy;
+if (player.y + dy < HEIGHT){
+player.y += dy;
 i += 1
 
 
 
 movesLeft = rollAmount - i;
-movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
-console.log(movingPlayer.trackedTurn);
+socket.emit('trackRoll', movesLeft, rollAmount)
+player.trackedTurn.push({x:  + player.x, y: + player.y });
+console.log(player.trackedTurn);
 
-changeTurn(movesLeft, players)
-showMovesLeft(movesLeft);
+changeTurn(movesLeft, player)
+
 
 
 }
 
 break;
 case 37:  /* Left arrow was pressed */
-if (movingPlayer.x - dx > 0){
-movingPlayer.x -= dx;
+if (player.x - dx > 0){
+player.x -= dx;
 i += 1
 movesLeft = rollAmount - i;
-showMovesLeft(movesLeft);
-movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
-console.log(movingPlayer.trackedTurn);
-changeTurn(movesLeft, players)
+socket.emit('trackRoll', movesLeft, rollAmount)
+player.trackedTurn.push({x:  + player.x, y: + player.y });
+console.log(player.trackedTurn);
+changeTurn(movesLeft, player)
 }
 break;
 case 39:  /* Right arrow was pressed */
-if (movingPlayer.x + dx < WIDTH){
-movingPlayer.x += dx;
+if (player.x + dx < WIDTH){
+player.x += dx;
 i +=1
 movesLeft = rollAmount - i;
-showMovesLeft(movesLeft);
-movingPlayer.trackedTurn.push({x:  + movingPlayer.x, y: + movingPlayer.y });
+socket.emit('trackRoll', movesLeft, rollAmount)
+player.trackedTurn.push({x:  + player.x, y: + player.y });
 
-console.log(movingPlayer.trackedTurn);
-changeTurn(movesLeft, players)
+console.log(player.trackedTurn);
+changeTurn(movesLeft, player)
 }
 break;
 }
 
 
-socket.emit('playerMoved', movingPlayer.x, movingPlayer.y)
+socket.emit('playerMoved', player.x, player.y)
+}
+}
 }
 
-}
 
-
-function changeTurn(movesLeft, players) {
-  if (movesLeft === 0) {
-    players[0].isTurn = true;
-    $("#rollDye").show();
-  $(".showRoll").hide();
-  $(".showMoves").hide();
-  // $("#waiting-message").show();
-  }
-}
 
   //remove button from avaiable options
               function removeCharacter(msg){
@@ -612,44 +600,57 @@ function changeTurn(movesLeft, players) {
               $("#" + buttonId).remove();
             }
 
- function startGame(player1, player2){
 
-               console.log("it worked")
-                player1.isTurn = true;
-                socket.emit('changeTurn', player1.isTurn, player1.id)
 
-                console.log(players)
-                 setTimeout(function () {dialog.dialog( "close" )}, 200);
-                 init()
-}
+
+
+
+
 
 
 document.getElementById("rollDye").addEventListener("click", rollDye);
 window.addEventListener('keyup',doKeyDown,true);
-window.addEventListener('keyup',socket.on('playerMoved', function(x, y){
-  player1.y = y;
-  player1.x = x;
+window.addEventListener('keyup',socket.on('playerMoved', function(x, y, id){
+    if (player.id === id){
+      console.log("foo")
+       console.log(x);
+    console.log(y);
+        player.y = y;
+  player.x = x;
+}
+  else{
+    console.log("bar")
+    console.log(x);
+    console.log(y);
+    opponent.y = y;
+    opponent.x =x;
+     circle(opponent.x, opponent.y, r, opponent.color);
+  }
+
+
+
+
 }));
 
 window.addEventListener('keyup', function checkCollision(){
   for (var i = 0; i < placesArray.length; i++) {
     if (placesArray[i].name !== "Start") {
 
-var playerWidth = (player1.x - 12.5) + (2 * r);
-var playerHeight = (player1.y - 12.5) + (2 * r);
+var playerWidth = (player.x - 12.5) + (2 * r);
+var playerHeight = (player.y - 12.5) + (2 * r);
 
-  if (placesArray[i].x < playerWidth  && placesArray[i].x + placesArray[i].width  > player1.x &&
-    placesArray[i].y < playerHeight && placesArray[i].y + placesArray[i].height > player1.y) {
+  if (placesArray[i].x < playerWidth  && placesArray[i].x + placesArray[i].width  > player.x &&
+    placesArray[i].y < playerHeight && placesArray[i].y + placesArray[i].height > player.y) {
 
 console.log("we are in the " + placesArray[i].name + " area");
 $("#name-of-room").text(placesArray[i].name);
 
-beforeRoom = players[0].trackedTurn[players[0].trackedTurn.length - 2];
+beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
 console.log(beforeRoom);
 
 movesLeft = 0;
-          showMovesLeft(movesLeft);
-          console.log(players[0].trackedTurn);
+
+          console.log(player.trackedTurn);
 suggestionDialog.dialog( "open" );
 }
 }
@@ -703,10 +704,10 @@ suggestionDialog.dialog( "open" );
           var shownCard = hitSuggestion.pop();
 
           alert(shownCard);
-          player1.x = beforeRoom.x
-          player1.y = beforeRoom.y
+          player.x = beforeRoom.x
+          player.y = beforeRoom.y
          players[0].trackedTurn.push(beforeRoom);
-         changeTurn(movesLeft, players);
+         changeTurn(movesLeft, player);
            dialog.dialog( "close" );
 
 
@@ -762,79 +763,102 @@ suggestionDialog.dialog( "open" );
           //get socket ids from index.js and add them to players object
 
 
-          socket.on('grabSocketId', function(data){
-
-            if (data.length === 2) {
-              var theres2 = data;
-              player1.id= data[0];
-              player2.id = data[1];
+          socket.on('grabSocketId', function(id, cards, x, y){
 
 
-              //hide waiting since there are now 2 players
-              $("#waiting").hide();
-              $(".characters").show();
-socket.on('addCards', function(cards1, cards2){
-player1.cards = cards1;
-player2.cards=cards2;
-console.log(players)
-});
+          player.id = id;
+          player.cards = cards;
+          player.x = x;
+          player.y = y;
 
-    socket.on('sendCards', function(cards){
-   $.each(cards, function (index, value) {
+             $.each(player.cards, function (index, value) {
     $('#player-cards').append($('<li/>', {
         value: value,
         text : value,
         class: "ui-widget-content"
     }))
 })
-     });
 
-            }
+              //hide waiting since there are now 2 players
+              $("#waiting").hide();
+              $(".characters").show();
 
 
-          });
+console.log(player);
+});
+
+
 
 
 
 
 
           //function for if user already picked a name and clicked a button
-          socket.on('alreadyPicked', function(msg, id){
+          socket.on('selectCharacter', function(msg, id){
 
               $("#already-picked").append("You've picked " + msg);
-              for (var i = 0; i < players.length; i++) {
-                if (players[i].id === id){
-                  players[i].player = msg;
-                  getColor(players[i])
-                }
-              }
-              console.log(players);
-                if (player1.player !=="" && player2.player !== ""){
-startGame(player1, player2)
-}
+                  player.character = msg;
+                  getColor(player)
+
+
+
+              console.log(player);
               removeCharacter(msg)
+              socket.emit('opponentInfo', player.id, player.x, player.y, player.color, player.character);
+              socket.emit('startGame', msg)
+
+
+
+
           });
 
 
 
-           socket.on('nameChosen', function(msg, id){
-            $("#opponents-choice").append("Your opponent picked " + msg);
-             for (var i = 0; i < players.length; i++) {
-                if (players[i].id === id){
-                  players[i].player = msg;
-              getColor(players[i]);
+           socket.on('opponentPicked', function(msg, id){
+
+
+                if (player.id !== id){
+                  $("#opponents-choice").append("Your opponent picked " + msg);
                 }
-              }
-              console.log(players);
-                if (player1.player !=="" && player2.player !== ""){
-startGame(player1, player2)
-}
-              removeCharacter(msg);
+
+
+                removeCharacter(msg)
+
               });
+           socket.on('opponentInfo', function( id, x, y, color, character){
+            opponent.id = id;
+            opponent.x = x;
+            opponent.y = y;
+            opponent.color = color;
+            opponent.character = character;
+            console.log(opponent);
 
 
+           });
 
 
+socket.on('startTurn', function(turnValue){
+  player.isTurn = turnValue;
+  $("#rollDye").show();
+  $(".showRoll").hide();
+  $(".showMoves").hide();
+  $("#waiting-message").hide();
+
+})
+
+socket.on('notTurn', function(turnValue){
+  player.isTurn = turnValue;
+    $("#rollDye").hide();
+  $(".showRoll").show();
+  $(".showMoves").show();
+  $("#waiting-message").show();
+  $("#rolled-number").text('');
+    $("#moves-left").text('');
+})
+
+socket.on('startGame', function(){
+  init()
+});
 
 
 
