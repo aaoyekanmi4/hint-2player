@@ -690,14 +690,13 @@ suggestionDialog.dialog( "open" );
         Submit: function() {
           suggestionDialog.dialog( "close" );
           movesLeft = 0;
-         //  var hitSuggestion = [];
-         //  var suspect = $("#suspects").val();
-         //  var weapon = $("#weapons").val();
-         //  var place = $("#name-of-room").text();
 
-         //  console.log(player2Cards.indexOf(suspect));
-         //  console.log(player2Cards.indexOf(weapon));
-         //  console.log(player2Cards.indexOf(place));
+          var suspect = $("#suspects").val();
+          var weapon = $("#weapons").val();
+          var place = $("#name-of-room").text();
+
+socket.emit('madeSuggestion', suspect, weapon, place, player.id);
+
 
          //  if (player2Cards.indexOf(suspect) > -1) {
          //    hitSuggestion.push(suspect);
@@ -717,7 +716,9 @@ suggestionDialog.dialog( "open" );
          //  alert(shownCard);
           player.x = beforeRoom.x
           player.y = beforeRoom.y
-         player.trackedTurn.push(beforeRoom);
+          socket.emit('playerMoved', player.x, player.y);
+
+         player.trackedTurn.push(beforeRoom)
          // changeTurn(movesLeft, player);
          //   dialog.dialog( "close" );
 
@@ -786,7 +787,7 @@ suggestionDialog.dialog( "open" );
     $('#player-cards').append($('<li/>', {
         value: value,
         text : value,
-        class: "ui-widget-content"
+        class: "ui-widget-content card"
     }))
 })
 
@@ -881,7 +882,61 @@ $("#rolled-number").hide();
     $("#whoseTurn").hide();
 });
 
+socket.on('madeSuggestion', function(suspect, weapon, place, id){
+  alert("It was " + suspect + " in the " + place + " with the " + weapon);
+$("#awaitSuggestion").text('Click highlighted card to send to player');
 
+     if (player.cards.indexOf(suspect) > -1) {
+      var suspectSelected = $("li:contains('" + suspect + "')");
+            suspectSelected.css("background", "blue");
+            suspectSelected.hover(function(){
+    $(this).css("cursor", "pointer");
+    }, function(){
+    $(this).css("cursor", "default");
+});
+            suspectSelected.click(function(){
+  socket.emit('showCard', suspect, id);
+   $(".card").css("background", "")
+   socket.emit('changeTurn')
+})
+
+          }
+           if (player.cards.indexOf(weapon) > -1) {
+           var weaponSelected = $("li:contains('" + weapon + "')");
+            weaponSelected.css("background", "blue")
+                    weaponSelected.hover(function(){
+    $(this).css("cursor", "pointer");
+    }, function(){
+    $(this).css("cursor", "default");
+})
+weaponSelected.click(function(){
+  socket.emit('showCard', weapon, id);
+   $(".card").css("background", "")
+   socket.emit('changeTurn')
+})
+
+          }
+           if (player.cards.indexOf(place) > -1) {
+           var placeSelected = $("li:contains('" + place + "')");
+            placeSelected.css("background", "blue")
+                  placeSelected.hover(function(){
+    $(this).css("cursor", "pointer");
+    }, function(){
+    $(this).css("cursor", "default");
+})
+placeSelected.click(function(){
+  socket.emit('showCard', place, id);
+  $(".card").css("background", "")
+  socket.emit('changeTurn')
+
+})
+          }
+
+})
+ socket.on('showCard', function(card) {
+alert(card);
+socket.emit('changeTurn')
+ });
 
              });
 

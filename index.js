@@ -181,7 +181,13 @@ socket.on('insideRoom', function(character){
   socket.broadcast.emit('insideRoom', character);
 })
 
+socket.on('madeSuggestion', function(suspect, weapon, place, id){
+  socket.broadcast.emit('madeSuggestion', suspect, weapon, place, id);
+})
 
+socket.on('showCard', function(card, id){
+  io.to(id).emit('showCard', card);
+})
 });
 http.listen(3000, function(){
   console.log('listening on *:3000');
