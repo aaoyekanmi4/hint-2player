@@ -19,7 +19,27 @@
 
 
 <div id="shared-space">
- <div style="width: 1100px; display: none;" id="notebook">
+
+<canvas id="canvas" width="1100" height="600">
+This text is displayed if your browser does not support HTML5 Canvas.
+</canvas>
+
+
+<div style="float: right; width:210px; height: 600px;" id="make-moves">
+<div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
+<div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
+<button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
+<button id="accusation" class="ui-button ui-widget ui-corner-all">Make Accusation<i class="fa fa-gavel" aria-hidden="true"></i></button>
+
+  <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
+  <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
+
+
+  <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
+
+        <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-arrow-circle-down" aria-hidden="true"></i></button>
+  </div>
+<div style="width: 1100px;" id="notebook">
     <canvas id="myCanvas" height= 600 width=400></canvas>
     <div class="notes" style="float:right;">
     <div style="width: 100px; height: 50px; font-size: 45px;">Notes</div>
@@ -28,25 +48,6 @@
 
 
     </div>
-<canvas id="canvas" width="1100" height="600">
-This text is displayed if your browser does not support HTML5 Canvas.
-</canvas>
-
-
-<div style="float: right; width:210px; height: 600px; position: absolute;" id="make-moves">
-<div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
-<div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
-<button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
-
-  <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
-  <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
-
-
-  <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
-
-        <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil-square-o" aria-hidden="true"></i></button>
-  </div>
-
 
 </div>
 
@@ -82,7 +83,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
         <option class="suspect" value="Col. Mustard">Col. Mustard</option>
         <option class="suspect" value="Prof. Plum">Prof. Plum</option>
         <option class ="suspect" value ="Mr. Green">Mr. Green</option>
-        <option class ="suspect" value ="Mrs. White">Mrs. White</option>
+        <option class ="suspect" value ="Mrs. Black">Mrs. Black</option>
         <option class ="suspect" value ="Ms. Scarlet">Ms. Scarlet</option>
 
 
@@ -93,7 +94,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
         <option class="weapon" value="Candlestick">Candlestick</option>
         <option class="weapon" value="Wrench">Wrench</option>
         <option class="weapon" value="Revolver">Revolver</option>
-        <option class="weapon" value="Leadpipe">Lead Pipe</option>
+        <option class="weapon" value="Lead pipe">Lead Pipe</option>
         <option class="weapon" value="Rope">Rope</option>
       </select>
       <label for="place">Room</label>
@@ -246,9 +247,7 @@ for (var i = 0; i < locations.length; i ++) {
 
         var column = Math.floor(mousePos.x/size);
         var row = Math.floor(mousePos.y/size);
-        console.log(column + "," + row);
-        console.log(column * size)
-        console.log(row * size)
+
         if (grid[row][column] === 0) {
             fill('black', column, row)
             grid[row][column]=1
@@ -482,13 +481,14 @@ function rollDye () {
 
 
   $("#rollDye").hide();
+  $("#accusation").hide();
   $(".showRoll").show();
   $(".showMoves").show();
 
     i =0;
     movesLeft = rollAmount;
     socket.emit('trackRoll', movesLeft, rollAmount)
-    console.log(rollAmount.toString());
+
 
     // if (movesLeft === 0) {
     //   players[0].isTurn = false;
@@ -498,13 +498,9 @@ function rollDye () {
 
 }
 
-$("#view-notebook").click(function(){
-  $("#notebook").slideToggle( "slow" );
 
 
-  });
-
-function changeTurn(movesLeft, player){
+function turnChange(movesLeft, player){
   if (movesLeft === 0 && player.inRoom === false){
     socket.emit('changeTurn');
   }
@@ -533,13 +529,13 @@ player.y -= dy;
 i += 1
 
 
-console.log(player.y);
+
 movesLeft = rollAmount - i;
 
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
-console.log(player.trackedTurn);
-changeTurn(movesLeft, player)
+
+turnChange(movesLeft, player)
  }
 
 
@@ -558,9 +554,9 @@ i += 1
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
-console.log(player.trackedTurn);
 
-changeTurn(movesLeft, player)
+
+turnChange(movesLeft, player)
 
 
 
@@ -574,8 +570,8 @@ i += 1
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
-console.log(player.trackedTurn);
-changeTurn(movesLeft, player)
+
+turnChange(movesLeft, player)
 }
 break;
 case 39:  /* Right arrow was pressed */
@@ -586,8 +582,7 @@ movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
 
-console.log(player.trackedTurn);
-changeTurn(movesLeft, player)
+turnChange(movesLeft, player)
 }
 break;
 }
@@ -609,26 +604,16 @@ socket.emit('playerMoved', player.x, player.y)
 
 
 
-
-
-
-
-
-
 document.getElementById("rollDye").addEventListener("click", rollDye);
 window.addEventListener('keyup',doKeyDown,true);
 window.addEventListener('keyup',socket.on('playerMoved', function(x, y, id){
     if (player.id === id){
-      console.log("foo")
-       console.log(x);
-    console.log(y);
+
         player.y = y;
   player.x = x;
 }
   else{
-    console.log("bar")
-    console.log(x);
-    console.log(y);
+
     opponent.y = y;
     opponent.x =x;
      circle(opponent.x, opponent.y, r, opponent.color);
@@ -648,19 +633,18 @@ var playerHeight = (player.y - 12.5) + (2 * r);
   if (placesArray[i].x < playerWidth  && placesArray[i].x + placesArray[i].width  > player.x &&
     placesArray[i].y < playerHeight && placesArray[i].y + placesArray[i].height > player.y) {
 
-console.log("we are in the " + placesArray[i].name + " area");
 $("#name-of-room").text(placesArray[i].name);
 
 beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
-console.log(beforeRoom);
+
 player.inRoom = true;
-console.log(player)
+
 movesLeft = 0;
 socket.emit('trackRoll', movesLeft, rollAmount)
 socket.emit('insideRoom', player.character)
 
 
-          console.log(player.trackedTurn);
+
 suggestionDialog.dialog( "open" );
 }
 
@@ -695,7 +679,7 @@ suggestionDialog.dialog( "open" );
           var suspect = $("#suspects").val();
           var weapon = $("#weapons").val();
           var place = $("#name-of-room").text();
-          socket.emit('changeTurn')
+
 
 socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
@@ -820,7 +804,7 @@ console.log(player);
 
 
 
-              console.log(player);
+
               removeCharacter(msg)
               socket.emit('opponentInfo', player.id, player.x, player.y, player.color, player.character);
               socket.emit('startGame', msg)
@@ -849,7 +833,7 @@ console.log(player);
             opponent.y = y;
             opponent.color = color;
             opponent.character = character;
-            console.log(opponent);
+
 
 
            });
@@ -858,6 +842,7 @@ console.log(player);
 socket.on('startTurn', function(turnValue){
   player.isTurn = turnValue;
   $("#rollDye").show();
+  $("#accusation").show();
   $(".showRoll").hide();
   $(".showMoves").hide();
   $("#whoseTurn").text("Your turn");
@@ -867,9 +852,10 @@ socket.on('startTurn', function(turnValue){
 socket.on('notTurn', function(turnValue){
   player.isTurn = turnValue;
     $("#rollDye").hide();
+    $("#accusation").hide();
   $(".showRoll").show();
   $(".showMoves").show();
-  console.log(opponent.character);
+
   $("#whoseTurn").text(opponent.character.toString() + "'s turn");
   $("#rolled-number").text('');
     $("#moves-left").text('');
@@ -889,77 +875,98 @@ $("#rolled-number").hide();
 });
 
 socket.on('madeSuggestion', function(suspect, weapon, place, id){
+  console.log("selectedPlace: " + placeSelected);
+  console.log("selectedWeapon: " + weaponSelected);
+  console.log("selectedSuspect " + suspectSelected);
   alert("It was " + suspect + " in the " + place + " with the " + weapon);
 
 $("#awaitSuggestion").text('Click highlighted card to send to player');
 $("#rollDye").hide();
+$("#accusation").hide();
      if (player.cards.indexOf(suspect) > -1) {
-      var suspectSelected = $("li:contains('" + suspect + "')");
+
+      var suspectSelected = $(".card:contains('" + suspect + "')");
+      console.log(suspectSelected);
             suspectSelected.css("background", "blue");
             suspectSelected.hover(function(){
     $(this).css("cursor", "pointer");
     }, function(){
     $(this).css("cursor", "default");
 });
-            suspectSelected.click(function(){
+            suspectSelected.unbind('click').bind('click', function (card) {
   socket.emit('showCard', suspect, id);
+  console.log('showed suspect')
    $(".card").css("background", "")
      $("#awaitSuggestion").text('');
 $("#rolled-number").show();
     $("#moves-left").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
+    $("#accusation").show();
+    return false;
 
-   // socket.emit('changeTurn')
+
+
 })
 
           }
            if (player.cards.indexOf(weapon) > -1) {
-           var weaponSelected = $("li:contains('" + weapon + "')");
+
+           var weaponSelected = $(".card:contains('" + weapon + "')");
+           console.log(weaponSelected);
             weaponSelected.css("background", "blue")
                     weaponSelected.hover(function(){
     $(this).css("cursor", "pointer");
     }, function(){
     $(this).css("cursor", "default");
 })
-weaponSelected.click(function(){
+weaponSelected.unbind('click').bind('click', function (card) {
   socket.emit('showCard', weapon, id);
+  console.log('showed weapon')
    $(".card").css("background", "")
      $("#awaitSuggestion").text('');
 $("#rolled-number").show();
     $("#moves-left").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
+    $("#accusation").show();
+    return false;
 
-   // socket.emit('changeTurn')
+
 })
 
           }
            if (player.cards.indexOf(place) > -1) {
-           var placeSelected = $("li:contains('" + place + "')");
+
+           var placeSelected = $(".card:contains('" + place + "')");
+           console.log(placeSelected);
             placeSelected.css("background", "blue")
                   placeSelected.hover(function(){
     $(this).css("cursor", "pointer");
     }, function(){
     $(this).css("cursor", "default");
 })
-placeSelected.click(function(){
+placeSelected.unbind('click').bind('click', function (card) {
+
+
   socket.emit('showCard', place, id);
+  console.log('showed place')
   $(".card").css("background", "")
   $("#awaitSuggestion").text('');
 $("#rolled-number").show();
     $("#moves-left").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
+    $("#accusation").show
 
-  // socket.emit('changeTurn')
 
-})
+});
           }
 
 })
  socket.on('showCard', function(card) {
 alert(card);
+socket.emit('changeTurn')
 
  });
 

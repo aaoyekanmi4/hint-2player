@@ -183,9 +183,11 @@ socket.on('insideRoom', function(character){
 
 socket.on('madeSuggestion', function(suspect, weapon, place, id){
   socket.broadcast.emit('madeSuggestion', suspect, weapon, place, id);
+  console.log('madeSuggestion ran')
 })
 
 socket.on('showCard', function(card, id){
+   console.log("should only happen once")
   io.to(id).emit('showCard', card);
 })
 });
