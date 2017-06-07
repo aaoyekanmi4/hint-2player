@@ -97,8 +97,19 @@ This text is displayed if your browser does not support HTML5 Canvas.
         <option class="weapon" value="Lead pipe">Lead Pipe</option>
         <option class="weapon" value="Rope">Rope</option>
       </select>
-      <label for="place">Room</label>
-      <span tabindex="0" id="name-of-room" role="combobox" aria-expanded="false"  class="ui-selectmenu-button ui-button ui-widget ui-selectmenu-button-closed ui-corner-all" aria-activedescendant="ui-id-8" aria-labelledby="ui-id-8" aria-disabled="true"><span class="ui-selectmenu-text"></span></span>
+      <label for="room">Room</label>
+
+      <select name="room" id="rooms" style="display:none;">
+      <option class="room" value="Dining Room"> Dining Room</option>
+        <option class="room" value="Study">Study</option>
+        <option class="room" value="Hall">Hall</option>
+        <option class="room" value="Conservatory">Conservatory</option>
+        <option class="room" value="Billiard Room">Billiard Room</option>
+        <option class="room" value="Ballroom">Ballroom</option>
+        <option class="room" value="Library">Library</option>
+        <option class="room" value="Kitchen">Kitchen</option>
+        <option class="room" value="Lounge">Lounge</option>
+      </select>
 
   </form>
 </div>
@@ -633,7 +644,10 @@ var playerHeight = (player.y - 12.5) + (2 * r);
   if (placesArray[i].x < playerWidth  && placesArray[i].x + placesArray[i].width  > player.x &&
     placesArray[i].y < playerHeight && placesArray[i].y + placesArray[i].height > player.y) {
 
-$("#name-of-room").text(placesArray[i].name);
+$("#rooms").val(placesArray[i].name);
+$("#rooms").attr("disabled", true);
+$("#rooms").selectmenu("refresh");
+
 
 beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
 
@@ -678,7 +692,7 @@ suggestionDialog.dialog( "open" );
 
           var suspect = $("#suspects").val();
           var weapon = $("#weapons").val();
-          var place = $("#name-of-room").text();
+          var place = $("#rooms").val();
 
 
 socket.emit('madeSuggestion', suspect, weapon, place, player.id);
@@ -714,6 +728,12 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
 
         },
+      Accuse: function() {
+        var suspect = $("#suspects").val();
+          var weapon = $("#weapons").val();
+          var place = $("#rooms").val();
+          socket.emit('accuse', suspect, weapon, place, player.id);
+      }
 
       },
 
@@ -728,7 +748,10 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
     $( "#weapons" ).selectmenu();
 
-    $("#room").selectmenu();
+    $("#rooms").selectmenu();
+
+
+
           form = dialog.find( "form" ).on( "submit", function( event ) {
               event.preventDefault();
           });
@@ -753,13 +776,25 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
 
 
-          //on click of button in a browser windo send button's text to server
+          //on click of button in a browser window send button's text to server
           $("button").click( function(){
 
             socket.emit('nameChosen', $(this).text());
           });
 
+$("#accusation").click(function(){
+  $("button:contains('Submit')").hide();
+  $
+  var sure = confirm("Are you sure you want to make an accusation? If you are wrong you will lose the game.");
+  if (sure == true) {
+  $("#rooms").attr("disabled", false);
+$("#rooms").selectmenu("refresh");
+  $("#suggestion-form").dialog('option', 'title', 'Make Accusation');
 
+
+  suggestionDialog.dialog("open");
+}
+})
 
 
           //get socket ids from index.js and add them to players object
@@ -903,7 +938,7 @@ $("#rolled-number").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
     $("#accusation").show();
-    return false;
+
 
 
 
@@ -930,7 +965,7 @@ $("#rolled-number").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
     $("#accusation").show();
-    return false;
+
 
 
 })
@@ -957,7 +992,7 @@ $("#rolled-number").show();
     $("#moves-left").show();
     $("#whoseTurn").show();
     $("#rollDye").show();
-    $("#accusation").show
+    $("#accusation").show();
 
 
 });
