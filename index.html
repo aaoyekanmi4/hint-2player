@@ -29,7 +29,8 @@ This text is displayed if your browser does not support HTML5 Canvas.
 <div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
 <div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
-<button id="accusation" class="ui-button ui-widget ui-corner-all">Make Accusation<i class="fa fa-gavel" aria-hidden="true"></i></button>
+<button id="accusation" class="ui-button ui-widget ui-corner-all">Make Accusation <i class="fa fa-gavel" aria-hidden="true"></i></button>
+<button id="pass" class="ui-button ui-widget ui-corner-all" style="display:none;">Pass</button>
 
   <div class="showRoll ui-widget-content" style="font-size:25px" >Dice Roll: <span id="rolled-number"></span></div>
   <div class="showMoves ui-widget-content" style="font-size:25px"> Moves Left: <span id="moves-left"></span></div>
@@ -37,9 +38,11 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
   <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
 
-        <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-arrow-circle-down" aria-hidden="true"></i></button>
+        <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil" aria-hidden="true"></i></button>
+
+         <button id="close-notebook" class="ui-button ui-widget ui-corner-all" style="display: none;"> Close Notebook</button>
   </div>
-<div style="width: 1100px;" id="notebook">
+<div style="width: 1100px; display:none;" id="notebook">
     <canvas id="myCanvas" height= 600 width=400></canvas>
     <div class="notes" style="float:right;">
     <div style="width: 100px; height: 50px; font-size: 45px;">Notes</div>
@@ -115,162 +118,188 @@ This text is displayed if your browser does not support HTML5 Canvas.
 </div>
       </section>
       <script src="/socket.io/socket.io.js"></script>
+
       <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
       <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
       <script src="https://use.fontawesome.com/6791ba42d9.js"></script>
+      <script src="js/grid.js"></script>
       <script>
+//Code for building grid in notebook panel
 
-       function matrix( rows, cols, defaultValue){
+var canvas = document.getElementById('myCanvas');
+var context = canvas.getContext('2d');
+var x = 0;
+var y = 0;
+var width = 350;
+var height = 600;
+var unitSize = 25;
+
+var weapons = ["knife", "candlestick", "wrench", "revolver", "lead pipe", "rope" ]
+
+var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. White"]
+
+var locations = ["hall", "study", "dining room", "ballroom", "billiard", "conservatory", "lounge", "kitchen", "library"]
+
+
+//Draw grid border(rectangle)
+function drawBorder(x, y, width, height){
+  context.beginPath();
+  context.lineWidth = 4;
+  context.rect(x, y, width, height);
+  context.strokeStyle = 'black';
+  context.stroke();
+}
+
+//Draw horizontal lines of grid
+function drawRows (x, width, height, unitSize ){
+  var currentHeight = height - unitSize;
+  for (var i =0; i < ((height/unitSize) + 1); i++) {
+    context.beginPath();
+    context.lineWidth = 1;
+    context.moveTo(x, currentHeight);
+    context.lineTo(width, currentHeight);
+    context.stroke();
+    currentHeight = currentHeight - unitSize;
+  }
+}
+
+//Draw lines vertically
+function drawColumns(y, width, height, unitSize){
+
+  var currentWidth = width - unitSize;
+
+  for (var i =0; i < 8; i++) {
+    context.beginPath();
+    context.lineWidth = 1;
+    context.moveTo(currentWidth, y);
+    context.lineTo(currentWidth, height);
+    context.stroke();
+    currentWidth = currentWidth - unitSize;
+  }
+}
+
+//Row labels and headings for each card
+function labelSection(array, unitSize, start, title, titleY){
+
+  var margin = 5;
+
+  for (var i = 0; i < array.length; i ++) {
+    context.font = "15px Arial";
+    context.fillStyle = "black";
+    context.textAlign = "left";
+    context.fillText(array[i], margin, start - margin);
+    start = start- unitSize;
+  }
+
+
+  //Section header
+  context.fillStyle = "black";
+  context.fillRect(0, titleY, 350, 25)
+  context.font = "20px san-serif";
+  context.fillStyle= "white";
+  context.fillText(title ,0 , start -margin);
+}
+
+//Create 2D array to track clicked squares
+function matrix( rows, cols, defaultValue){
 
   var grid = [];
 
-  // Creates all lines:
+  // Creates rows of empty lists
   for(var i=0; i < rows; i++){
+    grid.push([]);
 
-      // Creates an empty line
-      grid.push([]);
+    // Starting j at 6 to account for row labels which do not need a value
+    for(var j=6; j < cols; j++){
 
-//j set to 5 to blank out row labels
-      for(var j=6; j < cols; j++){
-        // Initializes:
-        grid[i][j] = defaultValue;
-      }
+      grid[i][j] = defaultValue;
+    }
   }
 
 return grid;
 }
 
-function fill(s, row, column) {
-        context.fillStyle = s;
-        var innerSize = size-2;
-        context.fillRect(((row * size) + 1), ((column * size) + 1), innerSize, innerSize);
-    }
+//Get current mouse position
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}
+
+//Function to fill gridsquare with a black square
+function fill(color, row, column, unitSize) {
+
+  context.fillStyle = color;
+  var side = unitSize-2;
+  var x = (row * unitSize) + 1;
+  var y = (column * unitSize) + 1;
+  context.fillRect(x, y, side, side);
+}
+
+//Get mouse position on click and fill square at that position
+canvas.addEventListener('click', function(evt) {
+  var mousePos = getMousePos(canvas, evt);
+
+  var column = Math.floor(mousePos.x/unitSize);
+  console.log(column)
+  var row = Math.floor(mousePos.y/unitSize);
+  console.log(row)
+
+  //On initial click, fill grid square with smaller black square
+  if (grid[row][column] === 0) {
+    console.log("i clicked")
+    fill('black', column, row, 25);
+    grid[row][column]=1;
+  }
+
+  //If square is black, change it back to white.
+  else if (grid[row][column] === 1) {
+    fill('white', column, row, 25);
+    grid[row][column] =0;
+  }
+});
 
 var grid = matrix(24, 14, 0);
-;
 
-      var canvas = document.getElementById('myCanvas');
-      var context = canvas.getContext('2d');
-      var gridWidth = 350;
-      var gridHeight = 600;
-      var movingPlayer
+drawBorder(x, y, width, height);
 
+drawRows(x, width, height, unitSize);
 
-      context.beginPath();
-      context.lineWidth = 4;
-      var offset = 0;
-      context.rect(offset, offset, gridWidth, gridHeight);
+drawColumns(y, width, height, unitSize);
 
+labelSection(weapons, unitSize, height, "Weapons", 425);
 
-      context.strokeStyle = 'black';
-      context.stroke();
-      var startingPoint = (gridHeight + offset) - 25;
-      var size = 25;
+labelSection(suspects, unitSize, 425, "Suspects", 250);
+
+labelSection(locations, unitSize, 250, "Locations", 0);
 
 
- //      Draw lines horizontally
-      for (var i =0; i < 25; i++) {
-        context.beginPath();
-        context.lineWidth = 1;
-        context.moveTo(offset, startingPoint);
-        context.lineTo(offset + gridWidth, startingPoint);
-        context.stroke();
-        startingPoint = startingPoint - size;
-      }
-     var startingPoint = (gridWidth + offset) - 25;
-      //Draw lines vertically
-      for (var i =0; i < 8; i++) {
-        context.beginPath();
-        context.lineWidth = 1;
-        context.moveTo(startingPoint, 0);
-        context.lineTo(startingPoint, 600);
-        context.stroke();
-        startingPoint = startingPoint - size
-      }
-//add weapons
-      var weapons = ["knife", "candlestick", "wrench", "revolver", "lead pipe", "rope" ]
 
-var startingPoint = gridHeight + offset;
-for (var i = 0; i < weapons.length; i ++) {
-  context.font = "15px Arial";
-  context.fillStyle = "black";
- context.textAlign = "left";
-  context.fillText(weapons[i], offset+ 5, startingPoint -5);
-  startingPoint = startingPoint - size;
- }
-
- context.fillStyle = "black";
- context.fillRect(0, 425, 350, 25)
- context.font = "20px san-serif";
- context.fillStyle= "white";
- context.fillText("Weapons", offset, startingPoint -5);
-//add suspects
-var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. White"]
-var startingPoint = 425 + offset;
-for (var i = 0; i < suspects.length; i ++) {
-  context.font = "15px Arial";
-  context.fillStyle = "black";
- context.textAlign = "left";
-  context.fillText(suspects[i], offset+ 5, startingPoint -5);
-  startingPoint = startingPoint - size;
- }
-
- context.fillStyle = "black";
- context.fillRect(0, 250, 350, 25)
- context.font = "20px san-serif";
- context.fillStyle= "white";
- context.fillText("Suspects", offset, startingPoint -5);
-
- //add locations
-
-       var locations = ["hall", "study", "dining room", "ballroom", "billiard", "conservatory", "lounge", "kitchen", "library"]
-
-var startingPoint = 250 + offset;
-for (var i = 0; i < locations.length; i ++) {
-  context.font = "15px Arial";
-  context.fillStyle = "black";
- context.textAlign = "left";
-  context.fillText(locations[i], offset+ 5, startingPoint -5);
-  startingPoint = startingPoint - size;
- }
-
- context.fillStyle = "black";
- context.fillRect(0, 0, 350, 25)
- context.font = "20px san-serif";
- context.fillStyle= "white";
- context.fillText("Locations", offset, startingPoint -5);
-
-
-      function getMousePos(canvas, evt) {
-        var rect = canvas.getBoundingClientRect();
-        return {
-          x: evt.clientX - rect.left,
-          y: evt.clientY - rect.top
-        };
-      }
-
-      var canvas = document.getElementById('myCanvas');
-      var context = canvas.getContext('2d');
-
-      canvas.addEventListener('click', function(evt) {
-        var mousePos = getMousePos(canvas, evt);
-        var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
-
-        var column = Math.floor(mousePos.x/size);
-        var row = Math.floor(mousePos.y/size);
-
-        if (grid[row][column] === 0) {
-            fill('black', column, row)
-            grid[row][column]=1
-        }
-         else if(grid[row][column] === 1){
-fill('white', column, row)
-grid[row][column] =0
-        }
-      });
 
         $( function() {
 
+var name = prompt("Please enter your name")
+
+
+    $("#view-notebook").click(
+        function(){
+          $("#canvas").hide();
+          $("#notebook").show();
+          $(this).hide();
+          $("#close-notebook").show()
+
+        });
+
+$("#close-notebook").click(
+    function(){
+          $("#canvas").show();
+          $("#notebook").hide();
+          $(this).hide();
+          $("#view-notebook").show();
+
+        });
 
           var canvas;
           var context;
@@ -657,7 +686,7 @@ movesLeft = 0;
 socket.emit('trackRoll', movesLeft, rollAmount)
 socket.emit('insideRoom', player.character)
 
-
+$("button:contains('Accuse')").hide();
 
 suggestionDialog.dialog( "open" );
 }
@@ -729,6 +758,7 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
         },
       Accuse: function() {
+        suggestionDialog.dialog("close");
         var suspect = $("#suspects").val();
           var weapon = $("#weapons").val();
           var place = $("#rooms").val();
@@ -784,16 +814,22 @@ socket.emit('madeSuggestion', suspect, weapon, place, player.id);
 
 $("#accusation").click(function(){
   $("button:contains('Submit')").hide();
-  $
   var sure = confirm("Are you sure you want to make an accusation? If you are wrong you will lose the game.");
   if (sure == true) {
   $("#rooms").attr("disabled", false);
 $("#rooms").selectmenu("refresh");
   $("#suggestion-form").dialog('option', 'title', 'Make Accusation');
+  $("button:contains('Accuse')").show();
+
 
 
   suggestionDialog.dialog("open");
 }
+else {
+  $("button:contains('Submit')").show();
+
+}
+
 })
 
 
@@ -898,7 +934,7 @@ socket.on('notTurn', function(turnValue){
 
 socket.on('startGame', function(){
   init()
-  setTimeout(dialog.dialog('close'), 2000);
+dialog.dialog("close");
 
 });
 
@@ -910,14 +946,22 @@ $("#rolled-number").hide();
 });
 
 socket.on('madeSuggestion', function(suspect, weapon, place, id){
-  console.log("selectedPlace: " + placeSelected);
-  console.log("selectedWeapon: " + weaponSelected);
-  console.log("selectedSuspect " + suspectSelected);
+
   alert("It was " + suspect + " in the " + place + " with the " + weapon);
 
 $("#awaitSuggestion").text('Click highlighted card to send to player');
 $("#rollDye").hide();
 $("#accusation").hide();
+if (player.cards.indexOf(suspect) === -1 && player.cards.indexOf(weapon) === -1 && player.cards.indexOf(place) === -1){
+   socket.emit('noCards', id)
+  $("#awaitSuggestion").text('');
+$("#rolled-number").show();
+    $("#moves-left").show();
+    $("#whoseTurn").show();
+    $("#rollDye").show();
+    $("#accusation").show();
+
+}
      if (player.cards.indexOf(suspect) > -1) {
 
       var suspectSelected = $(".card:contains('" + suspect + "')");
@@ -1002,8 +1046,28 @@ $("#rolled-number").show();
  socket.on('showCard', function(card) {
 alert(card);
 socket.emit('changeTurn')
+});
 
- });
+ socket.on('noCards', function(msg){
+  alert(msg);
+  $("#accusation").show();
+  $("#pass").show();
+ })
+
+ $("#pass").click(function(){
+  $("#pass").hide();
+
+  socket.emit('changeTurn');
+ }
+  )
+
+socket.on('accused', function (msg) {
+ console.log(msg);
+  alert(msg);
+  $("body").hide()
+})
+
+
 
              });
 

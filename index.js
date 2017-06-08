@@ -63,10 +63,13 @@ res.sendFile(__dirname + '/index.html');
 });
 
 
+
+
 var buttonState = {};
 var socket_ids = [];
 var turnState = {};
 var characterList = [];
+var users = []
 
    shuffle(places);
           shuffle(suspects);
@@ -88,15 +91,20 @@ var characterList = [];
 
 io.on('connection', function(socket){
 
-     Object.keys(io.sockets.sockets);
-     Object.keys(io.sockets.sockets).forEach(function(id) {
 
-    if (socket_ids.indexOf(id) < 0){
-        socket_ids.push(id);
-    }
+     socket_ids.push(socket.id)
+
+  socket.on('disconnect', function(){
 
 
-});
+      var socketIndex = socket_ids.indexOf(socket.id)
+
+socket_ids.splice(socketIndex, 1);
+
+
+
+console.log(socket_ids)
+  });
      turnState[socket.id] = false;
      buttonState[socket.id] = "off";
      console.log(buttonState);
@@ -110,6 +118,7 @@ if (socket_ids.length === 2) {
 
   player2x = 512.5;
   player2y = 312.5;
+
     io.to(socket_ids[0]).emit('grabSocketId', socket_ids[0], player1Cards, player1x, player1y);
     io.to(socket_ids[1]).emit('grabSocketId', socket_ids[1], player2Cards,player2x, player2y);
 
@@ -186,9 +195,34 @@ socket.on('madeSuggestion', function(suspect, weapon, place, id){
 
 })
 
+
 socket.on('showCard', function(card, id){
 
   io.to(id).emit('showCard', card);
+});
+
+socket.on('noCards', function(id){
+  io.to(id).emit('noCards', "Player has no cards to show.")
+})
+
+socket.on('accuse', function(suspect, weapon, place, id){
+
+  if (suspect === who && weapon === how && place === where){
+
+     console.log("right");
+    io.to(id).emit('accused', "That's correct! You win!");
+    socket.broadcast.emit('accused',"The other player got the right answer. It was " + who + " in the " + where + " with the " + how +". You lose.");
+
+
+  }
+  else{
+    console.log("wrong");
+    msg1 = "That was incorrect. You Lose. The correct answer was " + who + " in the " + where + " with the " + how +"."
+    console.log(msg);
+io.to(id).emit('accused', msg);
+msg2 = "The other player made an incorrect accusation. You win! The correct answer was " + who + " in the " + where + " with the " + how +".";
+socket.broadcast.emit('accused', msg2);
+  }
 })
 });
 http.listen(3000, function(){
