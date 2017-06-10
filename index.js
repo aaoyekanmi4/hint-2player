@@ -225,6 +225,4 @@ socket.broadcast.emit('accused', msg2);
   }
 })
 });
-http.listen(5000, function(){
-  console.log('listening on *:5000');
-});
+.listen(process.env.PORT || 5000)
