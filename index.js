@@ -71,22 +71,6 @@ var turnState = {};
 var characterList = [];
 var users = []
 
-   shuffle(places);
-          shuffle(suspects);
-          shuffle(weapons);
-
-
-
-          var who = suspects.pop();
-          var how = weapons.pop();
-          var where = places.pop();
-
-          var allCards = places;
-
-          Array.prototype.push.apply(allCards, suspects);
-          Array.prototype.push.apply(allCards, weapons);
-          shuffle(allCards);
-          dealCards(allCards);
 
 
 io.on('connection', function(socket){
@@ -113,6 +97,23 @@ console.log(socket_ids)
 
 
 if (socket_ids.length === 2) {
+  shuffle(places);
+          shuffle(suspects);
+          shuffle(weapons);
+
+
+
+          var who = suspects.pop();
+          var how = weapons.pop();
+          var where = places.pop();
+
+          var allCards = places;
+
+          Array.prototype.push.apply(allCards, suspects);
+          Array.prototype.push.apply(allCards, weapons);
+          shuffle(allCards);
+          dealCards(allCards);
+
   player1x = 537.5;
   player1y = 312.5;
 
@@ -121,6 +122,8 @@ if (socket_ids.length === 2) {
 
     io.to(socket_ids[0]).emit('grabSocketId', socket_ids[0], player1Cards, player1x, player1y);
     io.to(socket_ids[1]).emit('grabSocketId', socket_ids[1], player2Cards,player2x, player2y);
+    player1Cards = [];
+    player2Cards = [];
 
 }
 
