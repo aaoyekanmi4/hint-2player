@@ -128,11 +128,7 @@ if (socket_ids.length === 2) {
     places = places.push(where);
     suspects = suspects.push(who);
     weapons = weapons.push(how);
-    return player1Cards
-    return player2Cards
-    return places
-    return suspects
-    return weapons
+
 
 }
 
