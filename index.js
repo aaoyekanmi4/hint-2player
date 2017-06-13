@@ -1,18 +1,5 @@
 
-var library = {name: "Library", x:0,y:0,width:300,height:150};
 
-          var study = {name:"Study", x:350,y:0,width:250,height:150};
-          var hall= {name:"Hall", x:700,y:0,width:125,height:200};
-          var lounge = {name:"Lounge", x:875,y:0,width:225,height:175};
-          var diningRoom = {name:"Dining Room", x:875,y:250,width:225,height:125};
-          var kitchen = {name: "Kitchen", x:625,y:450,width:250,height:150};
-          var ballroom = {name:"Ballroom", x:275,y:375,width:225,height:225};
-          var conservatory = {name: "Conservatory", x:0,y:300,width:225,height:225};
-          var billiard = {name: "Billiard Room", x:925,y:425,width:175,height:175};
-
-          var placesArray =[library, study, hall, lounge, diningRoom, kitchen, ballroom, conservatory, billiard];
-
-          var places = [];
 
 
 
@@ -32,7 +19,7 @@ var library = {name: "Library", x:0,y:0,width:300,height:150};
 
 
 
-          function dealCards (array) {
+          function dealCards (array, player1Cards, player2Cards) {
             for (var i = 0; i < array.length; i++) {
 
               player1Cards.push(array[i]);
@@ -63,15 +50,6 @@ var socket_ids = [];
 var turnState = {};
 var characterList = [];
 var users = [];
-var player1Cards = [];
-var player2Cards = [];
-placesArray.forEach( function(place) {
-            places.push(place.name);
-          });
-
-          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
-
-          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
 
 
 
@@ -99,7 +77,15 @@ console.log(socket_ids)
 
 
 if (socket_ids.length === 2) {
-  shuffle(places);
+  var player1Cards = [];
+var player2Cards = [];
+var locations = ["Hall", "Study", "Dining room", "Ballroom", "Billiard", "Conservatory", "Lounge", "Kitchen", "Library"]
+
+          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
+
+          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
+
+  shuffle(locations);
           shuffle(suspects);
           shuffle(weapons);
 
@@ -107,14 +93,15 @@ if (socket_ids.length === 2) {
 
           var who = suspects.pop();
           var how = weapons.pop();
-          var where = places.pop();
+          var where = locations.pop();
 
-          var allCards = places;
+          var allCards = [];
 
+          Array.prototype.push.apply(allCards, locations)
           Array.prototype.push.apply(allCards, suspects);
           Array.prototype.push.apply(allCards, weapons);
           shuffle(allCards);
-          dealCards(allCards);
+          dealCards(allCards, player1Cards, player2Cards);
 
   player1x = 537.5;
   player1y = 312.5;
