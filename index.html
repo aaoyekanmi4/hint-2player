@@ -307,8 +307,7 @@ $("#close-notebook").click(
           var dx = 25;
           var dy = 25;
           var r = 10;
-          var x = 537.5;
-          var y = 312.5;
+
           var WIDTH = 1100;
           var HEIGHT = 600;
 
@@ -548,6 +547,7 @@ function turnChange(movesLeft, player){
 
 
 function doKeyDown(evt){
+var opponentTotal = opponent.y * opponent.x
  if (player.isTurn === true) {
 
 
@@ -564,10 +564,11 @@ return }
 switch (evt.keyCode) {
 case 38:  /* Up arrow was pressed */
 
-if (player.y - dy > 0){
+if (player.y - dy > 0 && (player.y -25) * player.x !== opponentTotal){
 player.y -= dy;
 i += 1
 
+console.log(opponentTotal)
 
 
 movesLeft = rollAmount - i;
@@ -585,11 +586,12 @@ turnChange(movesLeft, player)
 break;
 case 40:  /* Down arrow was pressed */
 
-if (player.y + dy < HEIGHT){
+if (player.y + dy < HEIGHT && (player.y + 25) * player.x !== opponentTotal){
 player.y += dy;
 i += 1
 
 
+console.log(opponentTotal)
 
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
@@ -604,10 +606,12 @@ turnChange(movesLeft, player)
 
 break;
 case 37:  /* Left arrow was pressed */
-if (player.x - dx > 0){
+if (player.x - dx > 0  && player.y * (player.x - dx) !== opponentTotal){
 player.x -= dx;
 i += 1
 movesLeft = rollAmount - i;
+
+console.log(opponentTotal)
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
 
@@ -615,9 +619,12 @@ turnChange(movesLeft, player)
 }
 break;
 case 39:  /* Right arrow was pressed */
-if (player.x + dx < WIDTH){
+
+if (player.x + dx < WIDTH && player.y * (player.x + 25) !== opponentTotal){
 player.x += dx;
 i +=1
+
+console.log(opponentTotal)
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
@@ -663,6 +670,8 @@ window.addEventListener('keyup',socket.on('playerMoved', function(x, y, id){
 
 
 }));
+
+
 
 window.addEventListener('keyup', function checkCollision(){
   for (var i = 0; i < placesArray.length; i++) {

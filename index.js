@@ -212,8 +212,8 @@ socket.on('accuse', function(suspect, weapon, place, id){
   else{
     console.log("wrong");
     msg1 = "That was incorrect. You Lose. The correct answer was " + who + " in the " + where + " with the " + how +"."
-    console.log(msg);
-io.to(id).emit('accused', msg);
+    console.log(msg1);
+io.to(id).emit('accused', msg1);
 msg2 = "The other player made an incorrect accusation. You win! The correct answer was " + who + " in the " + where + " with the " + how +".";
 socket.broadcast.emit('accused', msg2);
   }
