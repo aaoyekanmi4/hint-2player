@@ -146,6 +146,7 @@ socket.on('trackRoll', function(movesLeft, rollAmount){
 
 socket.on('startGame', function(character){
   characterList.push(character);
+  console.log(characterList)
   if (characterList.length === 2){
     turnState[socket_ids[0]] = true;
     turnState[socket_ids[1]] = false;
@@ -153,6 +154,7 @@ socket.on('startGame', function(character){
     io.to(socket_ids[0]).emit('startTurn', turnState[socket_ids[0]]);
     io.to(socket_ids[1]).emit('notTurn', turnState[socket_ids[1]]);
     io.emit('startGame')
+    characterList = []
 
   }
 });
@@ -225,4 +227,8 @@ socket.broadcast.emit('accused', msg2);
   }
 })
 });
-http.listen(process.env.PORT || 5000)
+ http.listen(process.env.PORT || 5000)
+
+// http.listen(3000, function(){
+//   console.log('listening on *:3000');
+// });
