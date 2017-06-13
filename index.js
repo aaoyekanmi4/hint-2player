@@ -14,13 +14,7 @@ var library = {name: "Library", x:0,y:0,width:300,height:150};
 
           var places = [];
 
-          placesArray.forEach( function(place) {
-            places.push(place.name);
-          });
 
-          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
-
-          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
 
           //Fisher Yates shuffle
           function shuffle (array) {
@@ -71,6 +65,13 @@ var characterList = [];
 var users = [];
 var player1Cards = [];
 var player2Cards = [];
+placesArray.forEach( function(place) {
+            places.push(place.name);
+          });
+
+          var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
+
+          var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"];
 
 
 
@@ -123,11 +124,7 @@ if (socket_ids.length === 2) {
 
     io.to(socket_ids[0]).emit('grabSocketId', socket_ids[0], player1Cards, player1x, player1y);
     io.to(socket_ids[1]).emit('grabSocketId', socket_ids[1], player2Cards,player2x, player2y);
-    player1Cards = [];
-    player2Cards = [];
-    places = places.push(where);
-    suspects = suspects.push(who);
-    weapons = weapons.push(how);
+
 
 
 }
