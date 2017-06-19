@@ -25,7 +25,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
 </canvas>
 
 
-<div style="float: right; width:210px; height: 600px;" id="make-moves">
+<div style="float: right; width:210px; height: 600px; display:none;" id="make-moves">
 <div class="ui-widget-header" id="whoseTurn" style="padding: 0; font-size:30px">It is your opponent's turn</div>
 <div class="ui-widget-header" id="awaitSuggestion" style="padding: 0; font-size:30px"></div>
 <button id="rollDye" style="font-size:25px" class="ui-button ui-widget ui-corner-all">Roll Dice <img style="width:30px; height: 30px; background-color:transparent;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"/></button>
@@ -54,8 +54,8 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
 </div>
 
-        <div id="dialog-form" title="Pick a character">
-          <form>
+        <div  id="dialog-form" style="display: none;" title="Pick a character">
+          <form >
             <div id="waiting">Waiting for player 2</div>
             <div class="widget characters">
               <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum  <i class="fa fa-circle-o" style="color:purple;" aria-hidden="true"></i></button>
@@ -78,7 +78,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
         <div id="suggestion-form" title="Make Suggestion">
 
 
-  <form>
+  <form id ="suggestion-dialog" style="display: none;">
 
       <label for="suspect">Suspect</label>
       <select class="ui-selectmenu" name="suspect" id="suspects">
@@ -281,7 +281,15 @@ labelSection(locations, unitSize, 250, "Locations", 0);
         $( function() {
 
 var name = prompt("Please enter your name")
+if (name !== null){
+  $("#make-moves").show();
+  $("#dialog-form").show();
+}
 
+else {
+  $("#make-moves").show();
+  $("#dialog-form").show();
+}
 
     $("#view-notebook").click(
         function(){
