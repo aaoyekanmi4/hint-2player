@@ -539,6 +539,9 @@ function rollDye () {
 
 
 
+
+
+
 function turnChange(movesLeft, player){
   if (movesLeft === 0 && player.inRoom === false){
     socket.emit('changeTurn');
@@ -547,7 +550,12 @@ function turnChange(movesLeft, player){
 
 
 function doKeyDown(evt){
-var opponentTotal = opponent.y * opponent.x
+var opponentPosition = [opponent.x, opponent.y];
+console.log(opponentPosition);
+var playerPosition;
+
+
+
  if (player.isTurn === true) {
 
 
@@ -564,11 +572,12 @@ return }
 switch (evt.keyCode) {
 case 38:  /* Up arrow was pressed */
 
-if (player.y - dy > 0 && (player.y -25) * player.x !== opponentTotal){
+playerPosition = [player.x, player.y - dy];
+console.log(playerPosition);
+console.log(!playerPosition.every(function(v,i) { return v === opponentPosition[i]}))
+if (player.y - dy > 0 && !playerPosition.every(function(v,i) { return v === opponentPosition[i]})){
 player.y -= dy;
 i += 1
-
-console.log(opponentTotal)
 
 
 movesLeft = rollAmount - i;
@@ -585,13 +594,13 @@ turnChange(movesLeft, player)
 
 break;
 case 40:  /* Down arrow was pressed */
+playerPosition = [player.x, player.y + dy];
 
-if (player.y + dy < HEIGHT && (player.y + 25) * player.x !== opponentTotal){
+if (player.y + dy < HEIGHT && !playerPosition.every(function(v,i) { return v === opponentPosition[i]})){
 player.y += dy;
 i += 1
 
 
-console.log(opponentTotal)
 
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
@@ -606,12 +615,13 @@ turnChange(movesLeft, player)
 
 break;
 case 37:  /* Left arrow was pressed */
-if (player.x - dx > 0  && player.y * (player.x - dx) !== opponentTotal){
+playerPosition = [player.x - dx, player.y];
+if (player.x - dx > 0 && !playerPosition.every(function(v,i) { return v === opponentPosition[i]})){
 player.x -= dx;
 i += 1
 movesLeft = rollAmount - i;
 
-console.log(opponentTotal)
+
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
 
@@ -619,12 +629,12 @@ turnChange(movesLeft, player)
 }
 break;
 case 39:  /* Right arrow was pressed */
-
-if (player.x + dx < WIDTH && player.y * (player.x + 25) !== opponentTotal){
+playerPosition = [player.x + dx, player.y];
+if (player.x + dx < WIDTH && !playerPosition.every(function(v,i) { return v === opponentPosition[i]})){
 player.x += dx;
 i +=1
 
-console.log(opponentTotal)
+
 movesLeft = rollAmount - i;
 socket.emit('trackRoll', movesLeft, rollAmount)
 player.trackedTurn.push({x:  + player.x, y: + player.y });
