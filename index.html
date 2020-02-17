@@ -37,7 +37,7 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
 
   <ul id="player-cards" class="ui-widget-header" style="list-style-type: none; padding: 0; font-size:30px"> Cards</ul>
-
+    <p>Move with Arrow keys</p>
         <button id="view-notebook" class="ui-button ui-widget ui-corner-all">Notebook <i class="fa fa-pencil" aria-hidden="true"></i></button>
 
          <button id="close-notebook" class="ui-button ui-widget ui-corner-all" style="display: none;"> Close Notebook</button>
@@ -56,7 +56,11 @@ This text is displayed if your browser does not support HTML5 Canvas.
 
         <div  id="dialog-form" style="display: none;" title="Pick a character">
           <form >
-            <div id="waiting">Waiting for player 2</div>
+            <div id="waiting">Waiting for player 2
+              <p>OR</p>
+            <p id="instructions">You can open a new tab at this url and play against yourself to try it out!</p>
+            
+            </div>
             <div class="widget characters">
               <button class="ui-button ui-widget ui-corner-all" id="Plum">Prof. Plum  <i class="fa fa-circle-o" style="color:purple;" aria-hidden="true"></i></button>
 
@@ -136,7 +140,7 @@ var unitSize = 25;
 
 var weapons = ["knife", "candlestick", "wrench", "revolver", "lead pipe", "rope" ]
 
-var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. White"]
+var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"]
 
 var locations = ["hall", "study", "dining room", "ballroom", "billiard", "conservatory", "lounge", "kitchen", "library"]
 

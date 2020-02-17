@@ -79,7 +79,7 @@ console.log(socket_ids)
 if (socket_ids.length === 2) {
   var player1Cards = [];
 var player2Cards = [];
-var locations = ["Hall", "Study", "Dining room", "Ballroom", "Billiard", "Conservatory", "Lounge", "Kitchen", "Library"]
+var locations = ["Hall", "Study", "Dining Room", "Ballroom", "Billiard", "Conservatory", "Lounge", "Kitchen", "Library"]
 
           var weapons = ["Knife", "Candlestick", "Wrench", "Revolver", "Lead pipe", "Rope" ];
 
@@ -219,8 +219,7 @@ socket.broadcast.emit('accused', msg2);
   }
 })
 });
- http.listen(process.env.PORT || 5000)
+ http.listen(process.env.PORT || 5000, function(){
+   console.log('listening on port 5000')
+ })
 
-// http.listen(3000, function(){
-//   console.log('listening on *:3000');
-// });

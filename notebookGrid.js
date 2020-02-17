@@ -9,7 +9,7 @@ var unitSize = 25;
 
 var weapons = ["knife", "candlestick", "wrench", "revolver", "lead pipe", "rope" ]
 
-var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. White"]
+var suspects = ["Col. Mustard", "Prof. Plum", "Ms. Scarlet", "Mr. Green", "Mrs. Peacock", "Mrs. Black"]
 
 var locations = ["hall", "study", "dining room", "ballroom", "billiard", "conservatory", "lounge", "kitchen", "library"]
 
