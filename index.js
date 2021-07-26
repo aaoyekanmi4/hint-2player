@@ -58,7 +58,7 @@ io.on("connection", function(socket) {
       "Study",
       "Dining Room",
       "Ballroom",
-      "Billiard",
+      "Billiard Room",
       "Conservatory",
       "Lounge",
       "Kitchen",
@@ -104,7 +104,7 @@ io.on("connection", function(socket) {
 
     player2x = 512.5;
     player2y = 312.5;
-
+    io.emit('cardsChosen', who, where, how)
     io.to(socket_ids[0]).emit(
       "grabSocketId",
       socket_ids[0],
@@ -119,6 +119,8 @@ io.on("connection", function(socket) {
       player2x,
       player2y
     );
+
+    
   }
 
   socket.on("opponentInfo", function(id, x, y, color, character) {
@@ -184,39 +186,39 @@ io.on("connection", function(socket) {
     io.to(id).emit("noCards", "Player has no cards to show.");
   });
 
-  socket.on("accuse", function(suspect, weapon, place, id) {
-    if (suspect === who && weapon === how && place === where) {
+  socket.on("accuse", function(suspect, weapon, place, whoKilled, whatWeapon, whereWasIt, id) {
+    if (suspect === whoKilled && weapon === whatWeapon  && place === whereWasIt) {
       console.log("right");
       io.to(id).emit("accused", "That's correct! You win!");
       socket.broadcast.emit(
         "accused",
         "The other player got the right answer. It was " +
-          who +
+          whoKilled +
           " in the " +
-          where +
+          whereWasIt +
           " with the " +
-          how +
+          whatWeapon +
           ". You lose."
       );
     } else {
       console.log("wrong");
       msg1 =
         "That was incorrect. You Lose. The correct answer was " +
-        who +
+        whoKilled +
         " in the " +
-        where +
+        whereWasIt +
         " with the " +
-        how +
+        whatWeapon +
         ".";
       console.log(msg1);
       io.to(id).emit("accused", msg1);
       msg2 =
         "The other player made an incorrect accusation. You win! The correct answer was " +
-        who +
+        whoKilled +
         " in the " +
-        where +
+        whereWasIt +
         " with the " +
-        how +
+        whatWeapon +
         ".";
       socket.broadcast.emit("accused", msg2);
     }
