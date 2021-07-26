@@ -354,13 +354,10 @@
         var mousePos = getMousePos(canvas, evt);
 
         var column = Math.floor(mousePos.x / unitSize);
-        console.log(column);
         var row = Math.floor(mousePos.y / unitSize);
-        console.log(row);
 
         //On initial click, fill grid square with smaller black square
         if (grid[row][column] === 0) {
-          console.log('i clicked');
           fill('black', column, row, 25);
           grid[row][column] = 1;
         }
@@ -415,9 +412,9 @@
         var movesLeft;
         var i;
         var beforeRoom;
-        var whoKilled;
-        var whereWasIt;
-        var whatWeapon;
+        var culprit;
+        var murderLocation;
+        var murderWeapon;
 
         var playerCards = [];
         var player2Cards = [];
@@ -464,9 +461,7 @@
 
         function drawRoom(roomName) {
           context.beginPath();
-
           context.lineWidth = 4;
-
           context.rect(roomName.x, roomName.y, roomName.width, roomName.height);
           context.stroke();
           context.fillStyle = 'rgba(225,225,225,0.5)';
@@ -512,7 +507,7 @@
         //calls io from index.js
         var socket = io();
 
-        //object containing player and player2
+        //objects for player and opponent
         var player = {
           character: '',
           id: '',
@@ -536,7 +531,7 @@
           color: '',
         };
 
-        function getColor(player) {
+        function getCharacterColor(player) {
           if (player.character === 'Col. Mustard') {
             player.color = 'yellow';
           } else if (player.character === 'Mrs.Peacock') {
@@ -629,33 +624,10 @@
           'Mrs. Black',
         ];
 
-        //Fisher Yates shuffle
-        function shuffle(array) {
-          var i = 0,
-            j = 0,
-            temp = null;
-
-          for (i = array.length - 1; i > 0; i -= 1) {
-            j = Math.floor(Math.random() * (i + 1));
-            temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
-          }
-        }
-
-        function dealCards(array) {
-          for (var i = 0; i < array.length; i++) {
-            playerCards.push(array[i]);
-            i += 1;
-            player2Cards.push(array[i]);
-          }
-        }
-
         socket.on('cardsChosen', function (who, where, what) {
-          whoKilled = who;
-          whereWasIt = where;
-          whatWeapon = what;
-          console.log(whoKilled, whereWasIt, whatWeapon)
+          culprit = who;
+          murderLocation = where;
+          murderWeapon = what;
         });
 
         socket.on('showMovesLeft', function (movesLeft, rollAmount) {
@@ -691,7 +663,6 @@
 
         function doKeyDown(evt) {
           var opponentPosition = [opponent.x, opponent.y];
-          console.log(opponentPosition);
           var playerPosition;
 
           if (player.isTurn === true) {
@@ -703,12 +674,6 @@
               switch (evt.keyCode) {
                 case 38 /* Up arrow was pressed */:
                   playerPosition = [player.x, player.y - dy];
-                  console.log(playerPosition);
-                  console.log(
-                    !playerPosition.every(function (v, i) {
-                      return v === opponentPosition[i];
-                    })
-                  );
                   if (
                     player.y - dy > 0 &&
                     !playerPosition.every(function (v, i) {
@@ -909,9 +874,9 @@
                 suspect,
                 weapon,
                 place,
-                whoKilled,
-                whatWeapon,
-                whereWasIt,
+                culprit,
+                murderWeapon,
+                murderLocation,
                 player.id
               );
             },
@@ -989,15 +954,13 @@
           //hide waiting since there are now 2 players
           $('#waiting').hide();
           $('.characters').show();
-
-          console.log(player);
         });
 
         //function for if user already picked a name and clicked a button
         socket.on('selectCharacter', function (msg, id) {
           $('#already-picked').append("You've picked " + msg);
           player.character = msg;
-          getColor(player);
+          getCharacterColor(player);
 
           removeCharacter(msg);
           socket.emit(
@@ -1086,7 +1049,6 @@
           }
           if (player.cards.indexOf(suspect) > -1) {
             var suspectSelected = $(".card:contains('" + suspect + "')");
-            console.log(suspectSelected);
             suspectSelected.css('background', 'blue');
             suspectSelected.hover(
               function () {
@@ -1098,7 +1060,6 @@
             );
             suspectSelected.unbind('click').bind('click', function (card) {
               socket.emit('showCard', suspect, id);
-              console.log('showed suspect');
               $('.card').css('background', '');
               $('#awaitSuggestion').text('');
               $('#rolled-number').show();
@@ -1110,7 +1071,6 @@
           }
           if (player.cards.indexOf(weapon) > -1) {
             var weaponSelected = $(".card:contains('" + weapon + "')");
-            console.log(weaponSelected);
             weaponSelected.css('background', 'blue');
             weaponSelected.hover(
               function () {
@@ -1122,7 +1082,6 @@
             );
             weaponSelected.unbind('click').bind('click', function (card) {
               socket.emit('showCard', weapon, id);
-              console.log('showed weapon');
               $('.card').css('background', '');
               $('#awaitSuggestion').text('');
               $('#rolled-number').show();
@@ -1134,7 +1093,6 @@
           }
           if (player.cards.indexOf(place) > -1) {
             var placeSelected = $(".card:contains('" + place + "')");
-            console.log(placeSelected);
             placeSelected.css('background', 'blue');
             placeSelected.hover(
               function () {
@@ -1146,7 +1104,6 @@
             );
             placeSelected.unbind('click').bind('click', function (card) {
               socket.emit('showCard', place, id);
-              console.log('showed place');
               $('.card').css('background', '');
               $('#awaitSuggestion').text('');
               $('#rolled-number').show();
@@ -1175,7 +1132,6 @@
         });
 
         socket.on('accused', function (msg) {
-          console.log(msg);
           alert(msg);
           $('body').hide();
         });
