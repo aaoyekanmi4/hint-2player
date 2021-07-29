@@ -1,3 +1,5 @@
+const _ = require('lodash');
+
 //Fisher Yates shuffle
 const shuffle = (array) => {
   var i = 0,
@@ -10,23 +12,24 @@ const shuffle = (array) => {
     array[i] = array[j];
     array[j] = temp;
   }
-}
+};
 
-const dealCards = (array, player1, player2) => {
+const dealCards = (cards, player1, player2) => {
   const player1Cards = [];
   const player2Cards = [];
-  for (var i = 0; i < array.length; i++) {
-    player1Cards.push(array[i]);
+  for (var i = 0; i < cards.length; i++) {
+    player1Cards.push(cards[i]);
     i += 1;
-    player2Cards.push(array[i]);
+    player2Cards.push(cards[i]);
   }
   return [
     { ...player1, cards: [...player1Cards] },
     { ...player2, cards: [...player2Cards] },
   ];
-}
+};
+
 
 module.exports = {
   shuffle,
-  dealCards,
+  dealCards
 };

@@ -19,6 +19,10 @@ const playerJoin = (id, room) => {
   return newPlayer
 }
 
+const getCurrentPlayer = (id) => {
+  return players.find(player => player.id === id)
+}
+
 const getRoomPlayers = (room) => {
   return players.filter(player => player.room === room)
 }
@@ -41,5 +45,6 @@ const assignPlayerPositions = (players) => {
 module.exports = {
   playerJoin,
   getRoomPlayers,
-  assignPlayerPositions
+  assignPlayerPositions,
+  getCurrentPlayer
 }

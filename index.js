@@ -1,9 +1,10 @@
 var app = require('express')();
+const path = require('path')
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-const { playerJoin, getRoomPlayers, assignPlayerPositions }
+const { playerJoin, getRoomPlayers, assignPlayerPositions, getCurrentPlayer }
   = require('./helpers/players')
-const { shuffle, dealCards } = require('./helpers/dealCards')
+const { shuffle, dealCards } = require('./helpers/cardHandling')
 const { suspects, weapons, locations } = require('./helpers/cards');
 
 app.get('/', function (req, res) {
@@ -26,7 +27,7 @@ io.on('connection', function (socket) {
 
     socket_ids.splice(socketIndex, 1);
   });
-  // increase room number of more than 2 clients join
+  // increase room number when more than 2 clients join
   if (
     io.nsps['/'].adapter.rooms[`room-${roomno}`] &&
     io.nsps['/'].adapter.rooms[`room-${roomno}`].length > 1
@@ -46,21 +47,23 @@ io.on('connection', function (socket) {
     
     if (playersInRoom.length === 2) {
       const players =  assignPlayerPositions(playersInRoom)
+      const locationsCopy = [...locations]
+      const suspectsCopy = [...suspects]
+      const weaponsCopy = [...weapons]
+      shuffle(locationsCopy);
+      shuffle(suspectsCopy);
+      shuffle(weaponsCopy);
 
-      shuffle(locations);
-      shuffle(suspects);
-      shuffle(weapons);
+      var who = suspectsCopy.pop();
+      var how = weaponsCopy.pop();
+      var where = locationsCopy.pop();
 
-      var who = suspects.pop();
-      var how = weapons.pop();
-      var where = locations.pop();
-
-      var allCards = [...locations, ...suspects, ...weapons];
+      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];
  
       shuffle(allCards);
       const dealtPlayers = dealCards(allCards, players[0], players[1]);
      
-      io.emit('cardsChosen', who, where, how);
+      io.to(currentPlayer.room).emit('cardsChosen', who, where, how);
   
       for (let player of dealtPlayers) {
         io.to(player.id).emit(
@@ -75,40 +78,52 @@ io.on('connection', function (socket) {
   })
 
   socket.on('opponentInfo', function (id, x, y, color, character) {
-    socket.broadcast.emit('opponentInfo', id, x, y, color, character);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast.to(player.room).emit('opponentInfo', id, x, y, color, character);
   });
 
   socket.on('playerMoved', function (x, y) {
-    io.emit('playerMoved', x, y, socket.id);
+    const player = getCurrentPlayer(socket.id);
+    io.to(player.room).emit('playerMoved', x, y, socket.id);
   });
 
   socket.on('trackRoll', function (movesLeft, rollAmount) {
-    io.emit('showMovesLeft', movesLeft, rollAmount);
+    const player = getCurrentPlayer(socket.id);
+    io.to(player.room).emit('showMovesLeft', movesLeft, rollAmount);
   });
 
   socket.on('startGame', function (character) {
+    const player = getCurrentPlayer(socket.id);
+    const playersInRoom = getRoomPlayers(player.room)
+    const player1Id = playersInRoom[0].id
+    const player2Id = playersInRoom[1].id
     characterList.push(character);
     if (characterList.length === 2) {
-      turnState[socket_ids[0]] = true;
-      turnState[socket_ids[1]] = false;
-      io.to(socket_ids[0]).emit('startTurn', turnState[socket_ids[0]]);
-      io.to(socket_ids[1]).emit('notTurn', turnState[socket_ids[1]]);
-      io.emit('startGame');
+      turnState[player1Id] = true;
+      turnState[player2Id] = false;
+      io.to(player1Id).emit('startTurn', turnState[player1Id]);
+      io.to(player2Id).emit('notTurn', turnState[player2Id]);
+      io.to(player.room).emit('startGame');
       characterList = [];
     }
   });
 
   socket.on('nameChosen', function (msg) {
+    const player = getCurrentPlayer(socket.id);
     if (buttonState[socket.id] === 'off') {
       buttonState[socket.id] = 'on';
-      socket.broadcast.emit('opponentPicked', msg, socket.id);
+      socket.broadcast.to(player.room).emit('opponentPicked', msg, socket.id);
       io.to(socket.id).emit('selectCharacter', msg, socket.id);
     }
   });
 
   socket.on('changeTurn', function () {
-    turnState[socket_ids[0]] = !turnState[socket_ids[0]];
-    turnState[socket_ids[1]] = !turnState[socket_ids[1]];
+    const player = getCurrentPlayer(socket.id);
+    const playersInRoom = getRoomPlayers(player.room);
+    const player1Id = playersInRoom[0].id;
+    const player2Id = playersInRoom[1].id;
+    turnState[player1Id] = !turnState[player1Id];
+    turnState[player2Id] = !turnState[player2Id];
     for (var i = 0; i < socket_ids.length; i++) {
       if (turnState[socket_ids[i]] === true) {
         io.to(socket_ids[i]).emit('startTurn', turnState[socket_ids[i]]);
@@ -119,11 +134,15 @@ io.on('connection', function (socket) {
   });
 
   socket.on('insideRoom', function (character) {
-    socket.broadcast.emit('insideRoom', character);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast.to(player.room).emit('insideRoom', character);
   });
 
   socket.on('madeSuggestion', function (suspect, weapon, place, id) {
-    socket.broadcast.emit('madeSuggestion', suspect, weapon, place, id);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast
+      .to(player.room)
+      .emit('madeSuggestion', suspect, weapon, place, id);
   });
 
   socket.on('showCard', function (card, id) {
@@ -145,22 +164,25 @@ io.on('connection', function (socket) {
       murderLocation,
       id
     ) {
+      const player = getCurrentPlayer(socket.id);
       if (
         suspect === culprit &&
         weapon === murderWeapon &&
         place === murderLocation
       ) {
         io.to(id).emit('accused', "That's correct! You win!");
-        socket.broadcast.emit(
-          'accused',
-          'The other player got the right answer. It was ' +
-            culprit +
-            ' in the ' +
-            murderLocation +
-            ' with the ' +
-            murderWeapon +
-            '. You lose.'
-        );
+        socket.broadcast
+          .to(player.room)
+          .emit(
+            'accused',
+            'The other player got the right answer. It was ' +
+              culprit +
+              ' in the ' +
+              murderLocation +
+              ' with the ' +
+              murderWeapon +
+              '. You lose.'
+          );
       } else {
         msg1 =
           'That was incorrect. You Lose. The correct answer was ' +
@@ -179,7 +201,7 @@ io.on('connection', function (socket) {
           ' with the ' +
           murderWeapon +
           '.';
-        socket.broadcast.emit('accused', msg2);
+        socket.broadcast.to(player.room).emit('accused', msg2);
       }
     }
   );
