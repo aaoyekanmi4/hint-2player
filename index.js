@@ -1,7 +1,7 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-const { playerJoin } = require('./helpers/players')
+const { playerJoin, getRoomPlayers } = require('./helpers/players')
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
@@ -12,7 +12,6 @@ var socket_ids = [];
 var turnState = {};
 var characterList = [];
 var roomno = 1;
-
 
 //Fisher Yates shuffle
 function shuffle(array) {
@@ -52,91 +51,89 @@ io.on('connection', function (socket) {
     roomno++;
   
   socket.on('joinRoom', () => {
-    const newPlayer = playerJoin(socket.id, `room-${roomno}`);
+    const currentPlayer = playerJoin(socket.id, `room-${roomno}`);
     socket.join(`room-${roomno}`);
-    console.log(newPlayer)
   
-  
-
     //Send this event to everyone in the room.
     io.sockets
-      .in(newPlayer.room)
+      .in(currentPlayer.room)
       .emit('connectToRoom', 'You are in room no. ' + roomno);
-  })
   
-  turnState[socket.id] = false;
-  buttonState[socket.id] = 'off';
+    turnState[socket.id] = false;
+    buttonState[socket.id] = 'off';
 
-  if (socket_ids.length === 2) {
-    var player1Cards = [];
-    var player2Cards = [];
-    var locations = [
-      'Hall',
-      'Study',
-      'Dining Room',
-      'Ballroom',
-      'Billiard Room',
-      'Conservatory',
-      'Lounge',
-      'Kitchen',
-      'Library',
-    ];
+    const playersInRoom = getRoomPlayers(currentPlayer.room);
+    
+    if (playersInRoom.length === 2) {
+      var player1Cards = [];
+      var player2Cards = [];
+      var locations = [
+        'Hall',
+        'Study',
+        'Dining Room',
+        'Ballroom',
+        'Billiard Room',
+        'Conservatory',
+        'Lounge',
+        'Kitchen',
+        'Library',
+      ];
 
-    var weapons = [
-      'Knife',
-      'Candlestick',
-      'Wrench',
-      'Revolver',
-      'Lead pipe',
-      'Rope',
-    ];
+      var weapons = [
+        'Knife',
+        'Candlestick',
+        'Wrench',
+        'Revolver',
+        'Lead pipe',
+        'Rope',
+      ];
 
-    var suspects = [
-      'Col. Mustard',
-      'Prof. Plum',
-      'Ms. Scarlet',
-      'Mr. Green',
-      'Mrs. Peacock',
-      'Mrs. Black',
-    ];
+      var suspects = [
+        'Col. Mustard',
+        'Prof. Plum',
+        'Ms. Scarlet',
+        'Mr. Green',
+        'Mrs. Peacock',
+        'Mrs. Black',
+      ];
 
-    shuffle(locations);
-    shuffle(suspects);
-    shuffle(weapons);
+      shuffle(locations);
+      shuffle(suspects);
+      shuffle(weapons);
 
-    var who = suspects.pop();
-    var how = weapons.pop();
-    var where = locations.pop();
+      var who = suspects.pop();
+      var how = weapons.pop();
+      var where = locations.pop();
 
-    var allCards = [];
+      var allCards = [...locations, ...suspects, ...weapons];
+ 
+      shuffle(allCards);
+      dealCards(allCards, player1Cards, player2Cards);
+      player1Id = playersInRoom[0].id;
+      player1x = 537.5;
+      player1y = 312.5;
 
-    Array.prototype.push.apply(allCards, locations);
-    Array.prototype.push.apply(allCards, suspects);
-    Array.prototype.push.apply(allCards, weapons);
-    shuffle(allCards);
-    dealCards(allCards, player1Cards, player2Cards);
+      player2Id = playersInRoom[1].id;
+      player2x = 512.5;
+      player2y = 312.5;
+      io.emit('cardsChosen', who, where, how);
+      io.to(player1Id).emit(
+        'grabSocketId',
+        player1Id,
+        player1Cards,
+        player1x,
+        player1y
+      );
 
-    player1x = 537.5;
-    player1y = 312.5;
-
-    player2x = 512.5;
-    player2y = 312.5;
-    io.emit('cardsChosen', who, where, how);
-    io.to(socket_ids[0]).emit(
-      'grabSocketId',
-      socket_ids[0],
-      player1Cards,
-      player1x,
-      player1y
-    );
-    io.to(socket_ids[1]).emit(
-      'grabSocketId',
-      socket_ids[1],
-      player2Cards,
-      player2x,
-      player2y
-    );
-  }
+      io.to(player2Id).emit(
+        'grabSocketId',
+        player2Id,
+        player2Cards,
+        player2x,
+        player2y
+      );
+    }
+  })
 
   socket.on('opponentInfo', function (id, x, y, color, character) {
     socket.broadcast.emit('opponentInfo', id, x, y, color, character);

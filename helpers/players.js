@@ -16,8 +16,14 @@ const defaultPlayer = {
 const playerJoin = (id, room) => {
   const newPlayer = {...defaultPlayer, room, id}
   players.push(newPlayer)
-  console.log(newPlayer)
   return newPlayer
 }
 
-module.exports = {playerJoin}
+const getRoomPlayers = (room) => {
+  return players.filter(player => player.room === room)
+}
+
+module.exports = {
+  playerJoin,
+  getRoomPlayers
+}
