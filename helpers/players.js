@@ -23,7 +23,23 @@ const getRoomPlayers = (room) => {
   return players.filter(player => player.room === room)
 }
 
+const assignPlayerPositions = (players) => {
+  const playersCopy = [...players]
+  return playersCopy.map((player, index) => {
+    if (index === 0) {
+      player.x = 537.5
+      player.y = 312.5
+    }
+    else if (index === 1) {
+       player.x = 512.5;
+       player.y = 312.5;
+    }
+    return player
+  })
+ }
+
 module.exports = {
   playerJoin,
-  getRoomPlayers
+  getRoomPlayers,
+  assignPlayerPositions
 }

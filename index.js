@@ -1,7 +1,10 @@
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-const { playerJoin, getRoomPlayers } = require('./helpers/players')
+const { playerJoin, getRoomPlayers, assignPlayerPositions }
+  = require('./helpers/players')
+const { shuffle, dealCards } = require('./helpers/dealCards')
+const { suspects, weapons, locations } = require('./helpers/cards');
 
 app.get('/', function (req, res) {
   res.sendFile(__dirname + '/index.html');
@@ -13,37 +16,17 @@ var turnState = {};
 var characterList = [];
 var roomno = 1;
 
-//Fisher Yates shuffle
-function shuffle(array) {
-  var i = 0,
-    j = 0,
-    temp = null;
-
-  for (i = array.length - 1; i > 0; i -= 1) {
-    j = Math.floor(Math.random() * (i + 1));
-    temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-}
-
-function dealCards(array, player1Cards, player2Cards) {
-  for (var i = 0; i < array.length; i++) {
-    player1Cards.push(array[i]);
-    i += 1;
-    player2Cards.push(array[i]);
-  }
-}
-
 io.on('connection', function (socket) {
   socket_ids.push(socket.id);
-
+  turnState[socket.id] = false;
+  buttonState[socket.id] = 'off';
+  
   socket.on('disconnect', function () {
     var socketIndex = socket_ids.indexOf(socket.id);
 
     socket_ids.splice(socketIndex, 1);
   });
-
+  // increase room number of more than 2 clients join
   if (
     io.nsps['/'].adapter.rooms[`room-${roomno}`] &&
     io.nsps['/'].adapter.rooms[`room-${roomno}`].length > 1
@@ -58,44 +41,11 @@ io.on('connection', function (socket) {
     io.sockets
       .in(currentPlayer.room)
       .emit('connectToRoom', 'You are in room no. ' + roomno);
-  
-    turnState[socket.id] = false;
-    buttonState[socket.id] = 'off';
 
     const playersInRoom = getRoomPlayers(currentPlayer.room);
     
     if (playersInRoom.length === 2) {
-      var player1Cards = [];
-      var player2Cards = [];
-      var locations = [
-        'Hall',
-        'Study',
-        'Dining Room',
-        'Ballroom',
-        'Billiard Room',
-        'Conservatory',
-        'Lounge',
-        'Kitchen',
-        'Library',
-      ];
-
-      var weapons = [
-        'Knife',
-        'Candlestick',
-        'Wrench',
-        'Revolver',
-        'Lead pipe',
-        'Rope',
-      ];
-
-      var suspects = [
-        'Col. Mustard',
-        'Prof. Plum',
-        'Ms. Scarlet',
-        'Mr. Green',
-        'Mrs. Peacock',
-        'Mrs. Black',
-      ];
+      const players =  assignPlayerPositions(playersInRoom)
 
       shuffle(locations);
       shuffle(suspects);
@@ -108,30 +58,19 @@ io.on('connection', function (socket) {
       var allCards = [...locations, ...suspects, ...weapons];
  
       shuffle(allCards);
-      dealCards(allCards, player1Cards, player2Cards);
-      player1Id = playersInRoom[0].id;
-      player1x = 537.5;
-      player1y = 312.5;
-
-      player2Id = playersInRoom[1].id;
-      player2x = 512.5;
-      player2y = 312.5;
+      const dealtPlayers = dealCards(allCards, players[0], players[1]);
+     
       io.emit('cardsChosen', who, where, how);
-      io.to(player1Id).emit(
-        'grabSocketId',
-        player1Id,
-        player1Cards,
-        player1x,
-        player1y
-      );
-
-      io.to(player2Id).emit(
-        'grabSocketId',
-        player2Id,
-        player2Cards,
-        player2x,
-        player2y
-      );
+  
+      for (let player of dealtPlayers) {
+        io.to(player.id).emit(
+          'grabSocketId',
+          player.id,
+          player.cards,
+          player.x,
+          player.y
+        );
+      }
     }
   })
 
