@@ -624,6 +624,12 @@
           'Mrs. Black',
         ];
 
+        socket.emit('joinRoom')
+
+        socket.on('connectToRoom', (msg) => {
+          console.log(msg)
+        })
+
         socket.on('cardsChosen', function (who, where, what) {
           culprit = who;
           murderLocation = where;

@@ -1,3 +1,19 @@
+var app = require('express')();
+var http = require('http').Server(app);
+var io = require('socket.io')(http);
+const { playerJoin } = require('./helpers/players')
+
+app.get('/', function (req, res) {
+  res.sendFile(__dirname + '/index.html');
+});
+
+var buttonState = {};
+var socket_ids = [];
+var turnState = {};
+var characterList = [];
+var roomno = 1;
+
+
 //Fisher Yates shuffle
 function shuffle(array) {
   var i = 0,
@@ -20,20 +36,6 @@ function dealCards(array, player1Cards, player2Cards) {
   }
 }
 
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
-});
-
-var buttonState = {};
-var socket_ids = [];
-var turnState = {};
-var characterList = [];
-var users = [];
-
 io.on('connection', function (socket) {
   socket_ids.push(socket.id);
 
@@ -42,6 +44,26 @@ io.on('connection', function (socket) {
 
     socket_ids.splice(socketIndex, 1);
   });
+
+  if (
+    io.nsps['/'].adapter.rooms[`room-${roomno}`] &&
+    io.nsps['/'].adapter.rooms[`room-${roomno}`].length > 1
+  )
+    roomno++;
+  
+  socket.on('joinRoom', () => {
+    const newPlayer = playerJoin(socket.id, `room-${roomno}`);
+    socket.join(`room-${roomno}`);
+    console.log(newPlayer)
+  
+  
+
+    //Send this event to everyone in the room.
+    io.sockets
+      .in(newPlayer.room)
+      .emit('connectToRoom', 'You are in room no. ' + roomno);
+  })
+  
   turnState[socket.id] = false;
   buttonState[socket.id] = 'off';
 
@@ -133,7 +155,6 @@ io.on('connection', function (socket) {
     if (characterList.length === 2) {
       turnState[socket_ids[0]] = true;
       turnState[socket_ids[1]] = false;
-
       io.to(socket_ids[0]).emit('startTurn', turnState[socket_ids[0]]);
       io.to(socket_ids[1]).emit('notTurn', turnState[socket_ids[1]]);
       io.emit('startGame');
@@ -144,7 +165,6 @@ io.on('connection', function (socket) {
   socket.on('nameChosen', function (msg) {
     if (buttonState[socket.id] === 'off') {
       buttonState[socket.id] = 'on';
-
       socket.broadcast.emit('opponentPicked', msg, socket.id);
       io.to(socket.id).emit('selectCharacter', msg, socket.id);
     }
@@ -228,6 +248,7 @@ io.on('connection', function (socket) {
     }
   );
 });
+
 http.listen(process.env.PORT || 5000, function () {
   console.log('listening on port 5000');
 });
