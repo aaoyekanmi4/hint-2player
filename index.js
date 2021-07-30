@@ -1,158 +1,134 @@
-//Fisher Yates shuffle
-function shuffle(array) {
-  var i = 0,
-    j = 0,
-    temp = null;
+const app = require('express')();
+const express = require('express');
+const path = require('path');
+const http = require('http').Server(app);
+const io = require('socket.io')(http);
+const {
+  playerJoin,
+  getRoomPlayers,
+  assignPlayerPositions,
+  getCurrentPlayer,
+} = require('./helpers/players');
+const { shuffle, dealCards } = require('./helpers/cardHandling');
+const { suspects, weapons, locations } = require('./data/cards');
 
-  for (i = array.length - 1; i > 0; i -= 1) {
-    j = Math.floor(Math.random() * (i + 1));
-    temp = array[i];
-    array[i] = array[j];
-    array[j] = temp;
-  }
-}
-
-function dealCards(array, player1Cards, player2Cards) {
-  for (var i = 0; i < array.length; i++) {
-    player1Cards.push(array[i]);
-    i += 1;
-    player2Cards.push(array[i]);
-  }
-}
-
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
-});
+app.use(express.static(path.join(__dirname, 'public')));
 
 var buttonState = {};
 var socket_ids = [];
 var turnState = {};
 var characterList = [];
-var users = [];
+var roomno = 1;
 
 io.on('connection', function (socket) {
   socket_ids.push(socket.id);
+  turnState[socket.id] = false;
+  buttonState[socket.id] = 'off';
 
   socket.on('disconnect', function () {
     var socketIndex = socket_ids.indexOf(socket.id);
 
     socket_ids.splice(socketIndex, 1);
   });
-  turnState[socket.id] = false;
-  buttonState[socket.id] = 'off';
+  // increase room number when more than 2 clients join
+  if (
+    io.nsps['/'].adapter.rooms[`room-${roomno}`] &&
+    io.nsps['/'].adapter.rooms[`room-${roomno}`].length > 1
+  )
+    roomno++;
 
-  if (socket_ids.length === 2) {
-    var player1Cards = [];
-    var player2Cards = [];
-    var locations = [
-      'Hall',
-      'Study',
-      'Dining Room',
-      'Ballroom',
-      'Billiard Room',
-      'Conservatory',
-      'Lounge',
-      'Kitchen',
-      'Library',
-    ];
+  socket.on('joinRoom', () => {
+    const currentPlayer = playerJoin(socket.id, `room-${roomno}`);
+    socket.join(`room-${roomno}`);
 
-    var weapons = [
-      'Knife',
-      'Candlestick',
-      'Wrench',
-      'Revolver',
-      'Lead pipe',
-      'Rope',
-    ];
+    //Send this event to everyone in the room.
+    io.sockets
+      .in(currentPlayer.room)
+      .emit('connectToRoom', 'You are in room no. ' + roomno);
 
-    var suspects = [
-      'Col. Mustard',
-      'Prof. Plum',
-      'Ms. Scarlet',
-      'Mr. Green',
-      'Mrs. Peacock',
-      'Mrs. Black',
-    ];
+    const playersInRoom = getRoomPlayers(currentPlayer.room);
 
-    shuffle(locations);
-    shuffle(suspects);
-    shuffle(weapons);
+    if (playersInRoom.length === 2) {
+      const players = assignPlayerPositions(playersInRoom);
+      const locationsCopy = [...locations];
+      const suspectsCopy = [...suspects];
+      const weaponsCopy = [...weapons];
+      shuffle(locationsCopy);
+      shuffle(suspectsCopy);
+      shuffle(weaponsCopy);
 
-    var who = suspects.pop();
-    var how = weapons.pop();
-    var where = locations.pop();
+      var who = suspectsCopy.pop();
+      var how = weaponsCopy.pop();
+      var where = locationsCopy.pop();
 
-    var allCards = [];
+      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];
 
-    Array.prototype.push.apply(allCards, locations);
-    Array.prototype.push.apply(allCards, suspects);
-    Array.prototype.push.apply(allCards, weapons);
-    shuffle(allCards);
-    dealCards(allCards, player1Cards, player2Cards);
+      shuffle(allCards);
+      const dealtPlayers = dealCards(allCards, players[0], players[1]);
 
-    player1x = 537.5;
-    player1y = 312.5;
+      io.to(currentPlayer.room).emit('cardsChosen', who, where, how);
 
-    player2x = 512.5;
-    player2y = 312.5;
-    io.emit('cardsChosen', who, where, how);
-    io.to(socket_ids[0]).emit(
-      'grabSocketId',
-      socket_ids[0],
-      player1Cards,
-      player1x,
-      player1y
-    );
-    io.to(socket_ids[1]).emit(
-      'grabSocketId',
-      socket_ids[1],
-      player2Cards,
-      player2x,
-      player2y
-    );
-  }
+      for (let player of dealtPlayers) {
+        io.to(player.id).emit(
+          'grabSocketId',
+          player.id,
+          player.cards,
+          player.x,
+          player.y
+        );
+      }
+    }
+  });
 
   socket.on('opponentInfo', function (id, x, y, color, character) {
-    socket.broadcast.emit('opponentInfo', id, x, y, color, character);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast
+      .to(player.room)
+      .emit('opponentInfo', id, x, y, color, character);
   });
 
   socket.on('playerMoved', function (x, y) {
-    io.emit('playerMoved', x, y, socket.id);
+    const player = getCurrentPlayer(socket.id);
+    io.to(player.room).emit('playerMoved', x, y, socket.id);
   });
 
   socket.on('trackRoll', function (movesLeft, rollAmount) {
-    io.emit('showMovesLeft', movesLeft, rollAmount);
+    const player = getCurrentPlayer(socket.id);
+    io.to(player.room).emit('showMovesLeft', movesLeft, rollAmount);
   });
 
   socket.on('startGame', function (character) {
+    const player = getCurrentPlayer(socket.id);
+    const playersInRoom = getRoomPlayers(player.room);
+    const player1Id = playersInRoom[0].id;
+    const player2Id = playersInRoom[1].id;
     characterList.push(character);
     if (characterList.length === 2) {
-      turnState[socket_ids[0]] = true;
-      turnState[socket_ids[1]] = false;
-
-      io.to(socket_ids[0]).emit('startTurn', turnState[socket_ids[0]]);
-      io.to(socket_ids[1]).emit('notTurn', turnState[socket_ids[1]]);
-      io.emit('startGame');
+      turnState[player1Id] = true;
+      turnState[player2Id] = false;
+      io.to(player1Id).emit('startTurn', turnState[player1Id]);
+      io.to(player2Id).emit('notTurn', turnState[player2Id]);
+      io.to(player.room).emit('startGame');
       characterList = [];
     }
   });
 
   socket.on('nameChosen', function (msg) {
+    const player = getCurrentPlayer(socket.id);
     if (buttonState[socket.id] === 'off') {
       buttonState[socket.id] = 'on';
-
-      socket.broadcast.emit('opponentPicked', msg, socket.id);
+      socket.broadcast.to(player.room).emit('opponentPicked', msg, socket.id);
       io.to(socket.id).emit('selectCharacter', msg, socket.id);
     }
   });
 
   socket.on('changeTurn', function () {
-    turnState[socket_ids[0]] = !turnState[socket_ids[0]];
-    turnState[socket_ids[1]] = !turnState[socket_ids[1]];
+    const player = getCurrentPlayer(socket.id);
+    const playersInRoom = getRoomPlayers(player.room);
+    const player1Id = playersInRoom[0].id;
+    const player2Id = playersInRoom[1].id;
+    turnState[player1Id] = !turnState[player1Id];
+    turnState[player2Id] = !turnState[player2Id];
     for (var i = 0; i < socket_ids.length; i++) {
       if (turnState[socket_ids[i]] === true) {
         io.to(socket_ids[i]).emit('startTurn', turnState[socket_ids[i]]);
@@ -163,11 +139,15 @@ io.on('connection', function (socket) {
   });
 
   socket.on('insideRoom', function (character) {
-    socket.broadcast.emit('insideRoom', character);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast.to(player.room).emit('insideRoom', character);
   });
 
   socket.on('madeSuggestion', function (suspect, weapon, place, id) {
-    socket.broadcast.emit('madeSuggestion', suspect, weapon, place, id);
+    const player = getCurrentPlayer(socket.id);
+    socket.broadcast
+      .to(player.room)
+      .emit('madeSuggestion', suspect, weapon, place, id);
   });
 
   socket.on('showCard', function (card, id) {
@@ -189,22 +169,25 @@ io.on('connection', function (socket) {
       murderLocation,
       id
     ) {
+      const player = getCurrentPlayer(socket.id);
       if (
         suspect === culprit &&
         weapon === murderWeapon &&
         place === murderLocation
       ) {
-        io.to(id).emit('accused', "That's correct! You win!");
-        socket.broadcast.emit(
-          'accused',
-          'The other player got the right answer. It was ' +
-            culprit +
-            ' in the ' +
-            murderLocation +
-            ' with the ' +
-            murderWeapon +
-            '. You lose.'
-        );
+        io.to(id).emit('accusationMade', "That's correct! You win!");
+        socket.broadcast
+          .to(player.room)
+          .emit(
+            'accusationMade',
+            'The other player got the right answer. It was ' +
+              culprit +
+              ' in the ' +
+              murderLocation +
+              ' with the ' +
+              murderWeapon +
+              '. You lose.'
+          );
       } else {
         msg1 =
           'That was incorrect. You Lose. The correct answer was ' +
@@ -214,7 +197,7 @@ io.on('connection', function (socket) {
           ' with the ' +
           murderWeapon +
           '.';
-        io.to(id).emit('accused', msg1);
+        io.to(id).emit('accusationMade', msg1);
         msg2 =
           'The other player made an incorrect accusation. You win! The correct answer was ' +
           culprit +
@@ -223,11 +206,12 @@ io.on('connection', function (socket) {
           ' with the ' +
           murderWeapon +
           '.';
-        socket.broadcast.emit('accused', msg2);
+        socket.broadcast.to(player.room).emit('accusationMade', msg2);
       }
     }
   );
 });
+
 http.listen(process.env.PORT || 5000, function () {
   console.log('listening on port 5000');
 });

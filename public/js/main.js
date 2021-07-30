@@ -1,0 +1,898 @@
+const socket = io();
+/**TODO REFACTOR INTO FILES */
+var canvas = document.getElementById('myCanvas');
+var context = canvas.getContext('2d');
+var x = 0;
+var y = 0;
+var width = 350;
+var height = 600;
+var unitSize = 25;
+
+var weapons = [
+  'knife',
+  'candlestick',
+  'wrench',
+  'revolver',
+  'lead pipe',
+  'rope',
+];
+
+var suspects = [
+  'Col. Mustard',
+  'Prof. Plum',
+  'Ms. Scarlet',
+  'Mr. Green',
+  'Mrs. Peacock',
+  'Mrs. Black',
+];
+
+var locations = [
+  'hall',
+  'study',
+  'dining room',
+  'ballroom',
+  'billiard',
+  'conservatory',
+  'lounge',
+  'kitchen',
+  'library',
+];
+
+//Draw grid border(rectangle)
+function drawBorder(x, y, width, height) {
+  context.beginPath();
+  context.lineWidth = 4;
+  context.rect(x, y, width, height);
+  context.strokeStyle = 'black';
+  context.stroke();
+}
+
+//Draw horizontal lines of grid
+function drawRows(x, width, height, unitSize) {
+  var currentHeight = height - unitSize;
+  for (var i = 0; i < height / unitSize + 1; i++) {
+    context.beginPath();
+    context.lineWidth = 1;
+    context.moveTo(x, currentHeight);
+    context.lineTo(width, currentHeight);
+    context.stroke();
+    currentHeight = currentHeight - unitSize;
+  }
+}
+
+//Draw lines vertically
+function drawColumns(y, width, height, unitSize) {
+  var currentWidth = width - unitSize;
+
+  for (var i = 0; i < 8; i++) {
+    context.beginPath();
+    context.lineWidth = 1;
+    context.moveTo(currentWidth, y);
+    context.lineTo(currentWidth, height);
+    context.stroke();
+    currentWidth = currentWidth - unitSize;
+  }
+}
+
+//Row labels and headings for each card
+function labelSection(array, unitSize, start, title, titleY) {
+  var margin = 5;
+
+  for (var i = 0; i < array.length; i++) {
+    context.font = '15px Arial';
+    context.fillStyle = 'black';
+    context.textAlign = 'left';
+    context.fillText(array[i], margin, start - margin);
+    start = start - unitSize;
+  }
+
+  //Section header
+  context.fillStyle = 'black';
+  context.fillRect(0, titleY, 350, 25);
+  context.font = '20px san-serif';
+  context.fillStyle = 'white';
+  context.fillText(title, 0, start - margin);
+}
+
+//Create 2D array to track clicked squares
+function matrix(rows, cols, defaultValue) {
+  var grid = [];
+
+  // Creates rows of empty lists
+  for (var i = 0; i < rows; i++) {
+    grid.push([]);
+
+    // Starting j at 6 to account for row labels which do not need a value
+    for (var j = 6; j < cols; j++) {
+      grid[i][j] = defaultValue;
+    }
+  }
+
+  return grid;
+}
+
+//Get current mouse position
+function getMousePos(canvas, evt) {
+  var rect = canvas.getBoundingClientRect();
+  return {
+    x: evt.clientX - rect.left,
+    y: evt.clientY - rect.top,
+  };
+}
+
+//Function to fill gridsquare with a black square
+function fill(color, row, column, unitSize) {
+  context.fillStyle = color;
+  var side = unitSize - 2;
+  var x = row * unitSize + 1;
+  var y = column * unitSize + 1;
+  context.fillRect(x, y, side, side);
+}
+
+//Get mouse position on click and fill square at that position
+canvas.addEventListener('click', function (evt) {
+  var mousePos = getMousePos(canvas, evt);
+
+  var column = Math.floor(mousePos.x / unitSize);
+  var row = Math.floor(mousePos.y / unitSize);
+
+  //On initial click, fill grid square with smaller black square
+  if (grid[row][column] === 0) {
+    fill('black', column, row, 25);
+    grid[row][column] = 1;
+  }
+
+  //If square is black, change it back to white.
+  else if (grid[row][column] === 1) {
+    fill('white', column, row, 25);
+    grid[row][column] = 0;
+  }
+});
+
+var grid = matrix(24, 14, 0);
+
+drawBorder(x, y, width, height);
+
+drawRows(x, width, height, unitSize);
+
+drawColumns(y, width, height, unitSize);
+
+labelSection(weapons, unitSize, height, 'Weapons', 425);
+
+labelSection(suspects, unitSize, 425, 'Suspects', 250);
+
+labelSection(locations, unitSize, 250, 'Locations', 0);
+
+$(function () {
+  $('#view-notebook').click(function () {
+    $('#canvas').hide();
+    $('#notebook').show();
+    $(this).hide();
+    $('#close-notebook').show();
+  });
+
+  $('#close-notebook').click(function () {
+    $('#canvas').show();
+    $('#notebook').hide();
+    $(this).hide();
+    $('#view-notebook').show();
+  });
+
+  var canvas;
+  var context;
+  var size = 25;
+  var dx = 25;
+  var dy = 25;
+  var r = 10;
+
+  var WIDTH = 1100;
+  var HEIGHT = 600;
+
+  var rollAmount;
+  var movesLeft;
+  var i;
+  var beforeRoom;
+  var culprit;
+  var murderLocation;
+  var murderWeapon;
+
+  var playerCards = [];
+  var player2Cards = [];
+
+  function circle(x, y, r, color) {
+    context.beginPath();
+    context.fillStyle = color;
+    context.arc(x, y, r, 0, Math.PI * 2, true);
+    context.fill();
+  }
+
+  function rect(x, y, w, h) {
+    context.beginPath();
+    context.rect(x, y, w, h);
+    context.closePath();
+    context.fill();
+    context.stroke();
+  }
+
+  function drawGrid(HEIGHT, WIDTH, size) {
+    //      Draw lines horizontally
+    var startingPoint = HEIGHT - size;
+    for (var i = 0; i < HEIGHT / size - 1; i++) {
+      context.beginPath();
+      context.lineWidth = 1;
+      context.moveTo(0, startingPoint);
+      context.lineTo(WIDTH, startingPoint);
+      context.stroke();
+      startingPoint = startingPoint - size;
+    }
+    var startingPoint = WIDTH - size;
+    //Draw lines vertically
+    for (var i = 0; i < WIDTH / size - 1; i++) {
+      context.beginPath();
+      context.lineWidth = 1;
+      context.moveTo(startingPoint, 0);
+      context.lineTo(startingPoint, HEIGHT);
+      context.stroke();
+      startingPoint = startingPoint - size;
+    }
+  }
+
+  //Draw rooms
+
+  function drawRoom(roomName) {
+    context.beginPath();
+    context.lineWidth = 4;
+    context.rect(roomName.x, roomName.y, roomName.width, roomName.height);
+    context.stroke();
+    context.fillStyle = 'rgba(225,225,225,0.5)';
+    context.fillRect(
+      roomName.x + 2,
+      roomName.y + 2,
+      roomName.width - 4,
+      roomName.height - 4
+    );
+    context.font = '20px san-serif';
+    context.fillStyle = 'black';
+    context.fillText(
+      roomName.name,
+      roomName.x + roomName.width / 2 - 25,
+      roomName.height + roomName.y - roomName.height / 2
+    );
+  }
+
+  function clear() {
+    context.clearRect(0, 0, WIDTH, HEIGHT);
+  }
+
+  function draw() {
+    clear();
+    context.fillStyle = 'white';
+    context.strokeStyle = 'black';
+    rect(0, 0, WIDTH, HEIGHT);
+
+    circle(player.x, player.y, r, player.color);
+    circle(opponent.x, opponent.y, r, opponent.color);
+
+    drawGrid(HEIGHT, WIDTH, size);
+    placesArray.forEach(drawRoom);
+  }
+
+  function init() {
+    canvas = document.getElementById('canvas');
+    context = canvas.getContext('2d');
+    $('#make-moves').show();
+    return setInterval(draw, 10);
+  }
+
+  //calls io from index.js
+  var socket = io();
+
+  //objects for player and opponent
+  var player = {
+    character: '',
+    id: '',
+    isTurn: false,
+    inRoom: false,
+    cards: [],
+    trackedTurn: [],
+    x: '',
+    y: '',
+    color: '',
+  };
+
+  var opponent = {
+    character: '',
+    id: '',
+    isTurn: false,
+    inRoom: false,
+    trackedTurn: [],
+    x: '',
+    y: '',
+    color: '',
+  };
+
+  function getCharacterColor(player) {
+    if (player.character === 'Col. Mustard') {
+      player.color = 'yellow';
+    } else if (player.character === 'Mrs.Peacock') {
+      player.color = 'blue';
+    } else if (player.character === 'Mr. Green') {
+      player.color = 'green';
+    } else if (player.character === 'Prof. Plum') {
+      player.color = 'purple';
+    } else if (player.character === 'Mrs. Black') {
+      player.color = 'black';
+    } else if (player.character === 'Ms. Scarlet') {
+      player.color = 'red';
+    }
+  }
+
+  var library = { name: 'Library', x: 0, y: 0, width: 300, height: 150 };
+
+  var study = { name: 'Study', x: 350, y: 0, width: 250, height: 150 };
+  var hall = { name: 'Hall', x: 700, y: 0, width: 125, height: 200 };
+  var lounge = { name: 'Lounge', x: 875, y: 0, width: 225, height: 175 };
+  var diningRoom = {
+    name: 'Dining Room',
+    x: 875,
+    y: 250,
+    width: 225,
+    height: 125,
+  };
+  var kitchen = {
+    name: 'Kitchen',
+    x: 625,
+    y: 450,
+    width: 250,
+    height: 150,
+  };
+  var ballroom = {
+    name: 'Ballroom',
+    x: 275,
+    y: 375,
+    width: 225,
+    height: 225,
+  };
+  var conservatory = {
+    name: 'Conservatory',
+    x: 0,
+    y: 300,
+    width: 225,
+    height: 225,
+  };
+  var billiard = {
+    name: 'Billiard Room',
+    x: 925,
+    y: 425,
+    width: 175,
+    height: 175,
+  };
+
+  var placesArray = [
+    library,
+    study,
+    hall,
+    lounge,
+    diningRoom,
+    kitchen,
+    ballroom,
+    conservatory,
+    billiard,
+  ];
+
+  var places = [];
+
+  placesArray.forEach(function (place) {
+    places.push(place.name);
+  });
+
+  var weapons = [
+    'Knife',
+    'Candlestick',
+    'Wrench',
+    'Revolver',
+    'Lead pipe',
+    'Rope',
+  ];
+
+  var suspects = [
+    'Col. Mustard',
+    'Prof. Plum',
+    'Ms. Scarlet',
+    'Mr. Green',
+    'Mrs. Peacock',
+    'Mrs. Black',
+  ];
+
+  socket.emit('joinRoom');
+
+  socket.on('connectToRoom', (msg) => {
+    console.log(msg);
+  });
+
+  socket.on('cardsChosen', function (who, where, what) {
+    culprit = who;
+    murderLocation = where;
+    murderWeapon = what;
+  });
+
+  socket.on('showMovesLeft', function (movesLeft, rollAmount) {
+    if (typeof movesLeft !== 'undefined') {
+      $('#rolled-number').text(rollAmount);
+      $('#moves-left').text(movesLeft);
+    }
+  });
+
+  function rollDye() {
+    rollAmount = Math.floor(Math.random() * 12 + 1);
+
+    $('#rollDye').hide();
+    $('#accusation').hide();
+    $('.showRoll').show();
+    $('.showMoves').show();
+
+    i = 0;
+    movesLeft = rollAmount;
+    socket.emit('trackRoll', movesLeft, rollAmount);
+    return rollAmount;
+  }
+
+  function turnChange(movesLeft, player) {
+    if (movesLeft === 0 && player.inRoom === false) {
+      socket.emit('changeTurn');
+    }
+  }
+
+  function doKeyDown(evt) {
+    var opponentPosition = [opponent.x, opponent.y];
+    var playerPosition;
+
+    if (player.isTurn === true) {
+      if (typeof rollAmount !== 'undefined') {
+        if (i === rollAmount || movesLeft === 0) {
+          return;
+        }
+
+        switch (evt.keyCode) {
+          case 38 /* Up arrow was pressed */:
+            playerPosition = [player.x, player.y - dy];
+            if (
+              player.y - dy > 0 &&
+              !playerPosition.every(function (v, i) {
+                return v === opponentPosition[i];
+              })
+            ) {
+              player.y -= dy;
+              i += 1;
+
+              movesLeft = rollAmount - i;
+
+              socket.emit('trackRoll', movesLeft, rollAmount);
+              player.trackedTurn.push({ x: +player.x, y: +player.y });
+
+              turnChange(movesLeft, player);
+            }
+
+            break;
+          case 40 /* Down arrow was pressed */:
+            playerPosition = [player.x, player.y + dy];
+
+            if (
+              player.y + dy < HEIGHT &&
+              !playerPosition.every(function (v, i) {
+                return v === opponentPosition[i];
+              })
+            ) {
+              player.y += dy;
+              i += 1;
+
+              movesLeft = rollAmount - i;
+              socket.emit('trackRoll', movesLeft, rollAmount);
+              player.trackedTurn.push({ x: +player.x, y: +player.y });
+
+              turnChange(movesLeft, player);
+            }
+
+            break;
+          case 37 /* Left arrow was pressed */:
+            playerPosition = [player.x - dx, player.y];
+            if (
+              player.x - dx > 0 &&
+              !playerPosition.every(function (v, i) {
+                return v === opponentPosition[i];
+              })
+            ) {
+              player.x -= dx;
+              i += 1;
+              movesLeft = rollAmount - i;
+
+              socket.emit('trackRoll', movesLeft, rollAmount);
+              player.trackedTurn.push({ x: +player.x, y: +player.y });
+
+              turnChange(movesLeft, player);
+            }
+            break;
+          case 39 /* Right arrow was pressed */:
+            playerPosition = [player.x + dx, player.y];
+            if (
+              player.x + dx < WIDTH &&
+              !playerPosition.every(function (v, i) {
+                return v === opponentPosition[i];
+              })
+            ) {
+              player.x += dx;
+              i += 1;
+
+              movesLeft = rollAmount - i;
+              socket.emit('trackRoll', movesLeft, rollAmount);
+              player.trackedTurn.push({ x: +player.x, y: +player.y });
+
+              turnChange(movesLeft, player);
+            }
+            break;
+        }
+
+        socket.emit('playerMoved', player.x, player.y);
+      }
+    }
+  }
+
+  //remove button from avaiable options
+  function removeCharacter(msg) {
+    var buttonPressed = $("button:contains('" + msg + "')");
+    var buttonId = buttonPressed.attr('id');
+    $('#' + buttonId).remove();
+  }
+
+  document.getElementById('rollDye').addEventListener('click', rollDye);
+  window.addEventListener('keyup', doKeyDown, true);
+  window.addEventListener(
+    'keyup',
+    socket.on('playerMoved', function (x, y, id) {
+      if (player.id === id) {
+        player.y = y;
+        player.x = x;
+      } else {
+        opponent.y = y;
+        opponent.x = x;
+        circle(opponent.x, opponent.y, r, opponent.color);
+      }
+    })
+  );
+
+  window.addEventListener('keyup', function checkCollision() {
+    for (var i = 0; i < placesArray.length; i++) {
+      var playerWidth = player.x - 12.5 + 2 * r;
+      var playerHeight = player.y - 12.5 + 2 * r;
+
+      if (
+        placesArray[i].x < playerWidth &&
+        placesArray[i].x + placesArray[i].width > player.x &&
+        placesArray[i].y < playerHeight &&
+        placesArray[i].y + placesArray[i].height > player.y
+      ) {
+        $('#rooms').val(placesArray[i].name);
+        $('#rooms').attr('disabled', true);
+        $('#rooms').selectmenu('refresh');
+
+        beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
+
+        player.inRoom = true;
+
+        movesLeft = 0;
+        socket.emit('trackRoll', movesLeft, rollAmount);
+        socket.emit('insideRoom', player.character);
+
+        $("button:contains('Accuse')").hide();
+
+        suggestionDialog.dialog('open');
+      }
+    }
+  });
+
+  var suggestionDialog;
+  var dialog;
+  var form;
+  //jquery ui dialog for options box
+  dialog = $('#dialog-form').dialog({
+    autoOpen: false,
+    height: 400,
+    width: 650,
+    modal: true,
+
+    close: function () {
+      form[0].reset();
+    },
+  });
+
+  suggestionDialog = $('#suggestion-form').dialog({
+    autoOpen: false,
+    height: 400,
+    width: 350,
+    modal: true,
+    buttons: {
+      Submit: function () {
+        suggestionDialog.dialog('close');
+        movesLeft = 0;
+
+        var suspect = $('#suspects').val();
+        var weapon = $('#weapons').val();
+        var place = $('#rooms').val();
+
+        socket.emit('madeSuggestion', suspect, weapon, place, player.id);
+
+        player.x = beforeRoom.x;
+        player.y = beforeRoom.y;
+        socket.emit('playerMoved', player.x, player.y);
+        player.inRoom = false;
+
+        player.trackedTurn.push(beforeRoom);
+      },
+      Accuse: function () {
+        suggestionDialog.dialog('close');
+        var suspect = $('#suspects').val();
+        var weapon = $('#weapons').val();
+        var place = $('#rooms').val();
+        socket.emit(
+          'accuse',
+          suspect,
+          weapon,
+          place,
+          culprit,
+          murderWeapon,
+          murderLocation,
+          player.id
+        );
+      },
+    },
+  });
+
+  form = dialog.find('form').on('submit', function (event) {
+    event.preventDefault();
+  });
+
+  $('#suspects').selectmenu();
+
+  $('#weapons').selectmenu();
+
+  $('#rooms').selectmenu();
+
+  form = dialog.find('form').on('submit', function (event) {
+    event.preventDefault();
+  });
+
+  $('button, input, a').click(function (event) {
+    event.preventDefault();
+  });
+
+  //create jquery ui buttons
+  $('.widget input[type=submit], .widget a, .widget button').button();
+
+  //show waiting message if only one user connected
+  $('#waiting').show();
+  $('.characters').hide();
+  $('#make-moves').hide();
+  //open dialog with options to pick characters
+  dialog.dialog('open');
+
+  //on click of button in a browser window send button's text to server
+  $('button').click(function () {
+    socket.emit('nameChosen', $(this).text().trim());
+  });
+
+  $('#accusation').click(function () {
+    $("button:contains('Submit')").hide();
+    var sure = confirm(
+      'Are you sure you want to make an accusation? If you are wrong you will lose the game.'
+    );
+    if (sure == true) {
+      $('#rooms').attr('disabled', false);
+      $('#rooms').selectmenu('refresh');
+      $('#suggestion-form').dialog('option', 'title', 'Make Accusation');
+      $("button:contains('Accuse')").show();
+
+      suggestionDialog.dialog('open');
+    } else {
+      $("button:contains('Submit')").show();
+    }
+  });
+
+  //get socket ids from index.js and add them to players object
+
+  socket.on('grabSocketId', function (id, cards, x, y) {
+    player.id = id;
+    player.cards = cards;
+    player.x = x;
+    player.y = y;
+
+    $.each(player.cards, function (index, value) {
+      $('#player-cards').append(
+        $('<li/>', {
+          value: value,
+          text: value,
+          class: 'ui-widget-content card',
+        })
+      );
+    });
+
+    //hide waiting since there are now 2 players
+    $('#waiting').hide();
+    $('.characters').show();
+  });
+
+  //function for if user already picked a name and clicked a button
+  socket.on('selectCharacter', function (msg, id) {
+    $('#already-picked').append("You've picked " + msg);
+    player.character = msg;
+    getCharacterColor(player);
+
+    removeCharacter(msg);
+    socket.emit(
+      'opponentInfo',
+      player.id,
+      player.x,
+      player.y,
+      player.color,
+      player.character
+    );
+    socket.emit('startGame', msg);
+  });
+
+  socket.on('opponentPicked', function (msg, id) {
+    if (player.id !== id) {
+      $('#opponents-choice').append('Your opponent picked ' + msg);
+    }
+
+    removeCharacter(msg);
+  });
+  socket.on('opponentInfo', function (id, x, y, color, character) {
+    opponent.id = id;
+    opponent.x = x;
+    opponent.y = y;
+    opponent.color = color;
+    opponent.character = character;
+  });
+
+  socket.on('startTurn', function (turnValue) {
+    player.isTurn = turnValue;
+    $('#rollDye').show();
+    $('#accusation').show();
+    $('.showRoll').hide();
+    $('.showMoves').hide();
+    $('#whoseTurn').text('Your turn');
+  });
+
+  socket.on('notTurn', function (turnValue) {
+    player.isTurn = turnValue;
+    $('#rollDye').hide();
+    $('#accusation').hide();
+    $('.showRoll').show();
+    $('.showMoves').show();
+
+    $('#whoseTurn').text(opponent.character.toString() + "'s turn");
+    $('#rolled-number').text('');
+    $('#moves-left').text('');
+  });
+
+  socket.on('startGame', function () {
+    init();
+    dialog.dialog('close');
+  });
+
+  socket.on('insideRoom', function (character) {
+    $('#awaitSuggestion').text(
+      'Wait for ' + character + ' to make a suggestion.'
+    );
+    $('#rolled-number').hide();
+    $('#moves-left').hide();
+    $('#whoseTurn').hide();
+  });
+
+  socket.on('madeSuggestion', function (suspect, weapon, place, id) {
+    alert('It was ' + suspect + ' in the ' + place + ' with the ' + weapon);
+
+    $('#awaitSuggestion').text('Click highlighted card to send to player');
+    $('#rollDye').hide();
+    $('#accusation').hide();
+    if (
+      player.cards.indexOf(suspect) === -1 &&
+      player.cards.indexOf(weapon) === -1 &&
+      player.cards.indexOf(place) === -1
+    ) {
+      socket.emit('noCards', id);
+      $('#awaitSuggestion').text('');
+      $('#rolled-number').show();
+      $('#moves-left').show();
+      $('#whoseTurn').show();
+      $('#rollDye').show();
+      $('#accusation').show();
+    }
+    if (player.cards.indexOf(suspect) > -1) {
+      var suspectSelected = $(".card:contains('" + suspect + "')");
+      suspectSelected.css('background', 'blue');
+      suspectSelected.hover(
+        function () {
+          $(this).css('cursor', 'pointer');
+        },
+        function () {
+          $(this).css('cursor', 'default');
+        }
+      );
+      suspectSelected.unbind('click').bind('click', function (card) {
+        socket.emit('showCard', suspect, id);
+        $('.card').css('background', '');
+        $('#awaitSuggestion').text('');
+        $('#rolled-number').show();
+        $('#moves-left').show();
+        $('#whoseTurn').show();
+        $('#rollDye').show();
+        $('#accusation').show();
+      });
+    }
+    if (player.cards.indexOf(weapon) > -1) {
+      var weaponSelected = $(".card:contains('" + weapon + "')");
+      weaponSelected.css('background', 'blue');
+      weaponSelected.hover(
+        function () {
+          $(this).css('cursor', 'pointer');
+        },
+        function () {
+          $(this).css('cursor', 'default');
+        }
+      );
+      weaponSelected.unbind('click').bind('click', function (card) {
+        socket.emit('showCard', weapon, id);
+        $('.card').css('background', '');
+        $('#awaitSuggestion').text('');
+        $('#rolled-number').show();
+        $('#moves-left').show();
+        $('#whoseTurn').show();
+        $('#rollDye').show();
+        $('#accusation').show();
+      });
+    }
+    if (player.cards.indexOf(place) > -1) {
+      var placeSelected = $(".card:contains('" + place + "')");
+      placeSelected.css('background', 'blue');
+      placeSelected.hover(
+        function () {
+          $(this).css('cursor', 'pointer');
+        },
+        function () {
+          $(this).css('cursor', 'default');
+        }
+      );
+      placeSelected.unbind('click').bind('click', function (card) {
+        socket.emit('showCard', place, id);
+        $('.card').css('background', '');
+        $('#awaitSuggestion').text('');
+        $('#rolled-number').show();
+        $('#moves-left').show();
+        $('#whoseTurn').show();
+        $('#rollDye').show();
+        $('#accusation').show();
+      });
+    }
+  });
+  socket.on('showCard', function (card) {
+    alert(card);
+    socket.emit('changeTurn');
+  });
+
+  socket.on('noCards', function (msg) {
+    alert(msg);
+    $('#accusation').show();
+    $('#pass').show();
+  });
+
+  $('#pass').click(function () {
+    $('#pass').hide();
+
+    socket.emit('changeTurn');
+  });
+
+  socket.on('accusationMade', function (msg) {
+    alert(msg);
+    $('body').hide();
+  });
+});
