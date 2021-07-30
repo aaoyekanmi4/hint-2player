@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Choose a character</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/jquery-ui.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/swanky-purse/theme.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .ui-dialog-titlebar-close {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <section>
+      <div id="shared-space">
+        <canvas id="canvas" width="1100" height="600">
+          This text is displayed if your browser does not support HTML5 Canvas.
+        </canvas>
+
+        <div
+          style="float: right; width: 210px; height: 600px; display: none"
+          id="make-moves"
+        >
+          <div
+            class="ui-widget-header"
+            id="whoseTurn"
+            style="padding: 0; font-size: 30px"
+          >
+            It is your opponent's turn
+          </div>
+          <div
+            class="ui-widget-header"
+            id="awaitSuggestion"
+            style="padding: 0; font-size: 30px"
+          ></div>
+          <button
+            id="rollDye"
+            style="font-size: 25px"
+            class="ui-button ui-widget ui-corner-all"
+          >
+            Roll Dice
+            <img
+              style="width: 30px; height: 30px; background-color: transparent"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"
+            />
+          </button>
+          <button id="accusation" class="ui-button ui-widget ui-corner-all">
+            Make Accusation <i class="fa fa-gavel" aria-hidden="true"></i>
+          </button>
+          <button
+            id="pass"
+            class="ui-button ui-widget ui-corner-all"
+            style="display: none"
+          >
+            Pass
+          </button>
+
+          <div class="showRoll ui-widget-content" style="font-size: 25px">
+            Dice Roll: <span id="rolled-number"></span>
+          </div>
+          <div class="showMoves ui-widget-content" style="font-size: 25px">
+            Moves Left: <span id="moves-left"></span>
+          </div>
+
+          <ul
+            id="player-cards"
+            class="ui-widget-header"
+            style="list-style-type: none; padding: 0; font-size: 30px"
+          >
+            Cards
+          </ul>
+          <p>Move with Arrow keys</p>
+          <button id="view-notebook" class="ui-button ui-widget ui-corner-all">
+            Notebook <i class="fa fa-pencil" aria-hidden="true"></i>
+          </button>
+
+          <button
+            id="close-notebook"
+            class="ui-button ui-widget ui-corner-all"
+            style="display: none"
+          >
+            Close Notebook
+          </button>
+        </div>
+        <div style="width: 1100px; display: none" id="notebook">
+          <canvas id="myCanvas" height="600" width="400"></canvas>
+          <div class="notes" style="float: right">
+            <div style="width: 100px; height: 50px; font-size: 45px">Notes</div>
+            <textarea
+              style="
+                width: 550px;
+                height: 540px;
+                border-width: 4px;
+                border-color: black;
+              "
+            ></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="dialog-form" style="display: none" title="Pick a character">
+        <form>
+          <div id="waiting">
+            Waiting for player 2
+            <p>OR</p>
+            <p id="instructions">
+              You can open a new tab at this url and play against yourself to
+              try it out!
+            </p>
+          </div>
+          <div class="widget characters">
+            <button class="ui-button ui-widget ui-corner-all" id="Plum">
+              Prof. Plum
+              <i
+                class="fa fa-circle-o"
+                style="color: purple"
+                aria-hidden="true"
+              ></i>
+            </button>
+
+            <button class="ui-button ui-widget ui-corner-all" id="Mustard">
+              Col. Mustard
+              <i
+                class="fa fa-circle-o"
+                style="color: yellow"
+                aria-hidden="true"
+              ></i>
+            </button>
+            <button class="ui-button ui-widget ui-corner-all" id="Black">
+              Mrs. Black
+              <i
+                class="fa fa-circle-o"
+                style="color: black"
+                aria-hidden="true"
+              ></i>
+            </button>
+            <br />
+            <br />
+            <br />
+            <button class="ui-button ui-widget ui-corner-all" id="Green">
+              Mr. Green
+              <i
+                class="fa fa-circle-o"
+                style="color: green"
+                aria-hidden="true"
+              ></i>
+            </button>
+            <button class="ui-button ui-widget ui-corner-all" id="Peacock">
+              Mrs.Peacock
+              <i
+                class="fa fa-circle-o"
+                style="color: blue"
+                aria-hidden="true"
+              ></i>
+            </button>
+            <button class="ui-button ui-widget ui-corner-all" id="Scarlet">
+              Ms. Scarlet
+              <i
+                class="fa fa-circle-o"
+                style="color: red"
+                aria-hidden="true"
+              ></i>
+            </button>
+          </div>
+
+          <div id="already-picked"></div>
+          <div id="opponents-choice"></div>
+        </form>
+      </div>
+      <div id="suggestion-form" title="Make Suggestion">
+        <form id="suggestion-dialog">
+          <label for="suspect">Suspect</label>
+          <select class="ui-selectmenu" name="suspect" id="suspects">
+            <option class="suspect" value="Mrs. Peacock">Mrs. Peacock</option>
+            <option class="suspect" value="Col. Mustard">Col. Mustard</option>
+            <option class="suspect" value="Prof. Plum">Prof. Plum</option>
+            <option class="suspect" value="Mr. Green">Mr. Green</option>
+            <option class="suspect" value="Mrs. Black">Mrs. Black</option>
+            <option class="suspect" value="Ms. Scarlet">Ms. Scarlet</option>
+          </select>
+          <label for="weapon">Weapon</label>
+          <select name="weapon" id="weapons">
+            <option class="weapon" value="Knife">Knife</option>
+            <option class="weapon" value="Candlestick">Candlestick</option>
+            <option class="weapon" value="Wrench">Wrench</option>
+            <option class="weapon" value="Revolver">Revolver</option>
+            <option class="weapon" value="Lead pipe">Lead Pipe</option>
+            <option class="weapon" value="Rope">Rope</option>
+          </select>
+          <label for="room">Room</label>
+
+          <select name="room" id="rooms" style="display: none">
+            <option class="room" value="Dining Room">Dining Room</option>
+            <option class="room" value="Study">Study</option>
+            <option class="room" value="Hall">Hall</option>
+            <option class="room" value="Conservatory">Conservatory</option>
+            <option class="room" value="Billiard Room">Billiard Room</option>
+            <option class="room" value="Ballroom">Ballroom</option>
+            <option class="room" value="Library">Library</option>
+            <option class="room" value="Kitchen">Kitchen</option>
+            <option class="room" value="Lounge">Lounge</option>
+          </select>
+        </form>
+      </div>
+    </section>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://use.fontawesome.com/6791ba42d9.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
