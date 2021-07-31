@@ -199,7 +199,7 @@ $(function () {
   var playerCards = [];
   var player2Cards = [];
 
-  function circle(x, y, r, color) {
+  function drawCircle(x, y, r, color) {
     context.beginPath();
     context.fillStyle = color;
     context.arc(x, y, r, 0, Math.PI * 2, true);
@@ -270,8 +270,8 @@ $(function () {
     context.strokeStyle = 'black';
     rect(0, 0, WIDTH, HEIGHT);
 
-    circle(player.x, player.y, r, player.color);
-    circle(opponent.x, opponent.y, r, opponent.color);
+    drawCircle(player.x, player.y, r, player.color);
+    drawCircle(opponent.x, opponent.y, r, opponent.color);
 
     drawGrid(HEIGHT, WIDTH, size);
     placesArray.forEach(drawRoom);
@@ -555,7 +555,7 @@ $(function () {
       } else {
         opponent.y = y;
         opponent.x = x;
-        circle(opponent.x, opponent.y, r, opponent.color);
+        drawCircle(opponent.x, opponent.y, r, opponent.color);
       }
     })
   );

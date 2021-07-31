@@ -14,18 +14,19 @@ const shuffle = (array) => {
   }
 };
 
-const dealCards = (cards, player1, player2) => {
-  const player1Cards = [];
-  const player2Cards = [];
-  for (var i = 0; i < cards.length; i++) {
-    player1Cards.push(cards[i]);
-    i += 1;
-    player2Cards.push(cards[i]);
+const dealCards = (cards, players) => {
+  const cardsCopy = [...cards]
+  const playersCopy = _.cloneDeep(players)
+  let playerIdx = 0
+  while (cardsCopy.length > 0) {
+    if (playerIdx === playersCopy.length) {
+      playerIdx = 0
+    }
+    playersCopy[playerIdx].cards.push(cardsCopy.pop())
+    playerIdx++
   }
-  return [
-    { ...player1, cards: [...player1Cards] },
-    { ...player2, cards: [...player2Cards] },
-  ];
+  console.log(playersCopy)
+  return playersCopy;
 };
 
 

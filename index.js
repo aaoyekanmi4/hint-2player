@@ -61,10 +61,10 @@ io.on('connection', function (socket) {
       var how = weaponsCopy.pop();
       var where = locationsCopy.pop();
 
-      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];
-
+      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];     
+    
       shuffle(allCards);
-      const dealtPlayers = dealCards(allCards, players[0], players[1]);
+      const dealtPlayers = dealCards(allCards, players);
 
       io.to(currentPlayer.room).emit('cardsChosen', who, where, how);
 
