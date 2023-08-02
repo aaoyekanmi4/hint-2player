@@ -247,11 +247,11 @@ $(function () {
   };
 
   function getCharacterValues (player) {
-    
-    const coords = startingSquares[player.character].split(",");
-    player.x = coords[0];
-    player.y = coords[1];
 
+    const coords = startingSquares[player.character].split(",");
+    player.x = parseFloat(coords[0]);
+    player.y = parseFloat(coords[1]);
+    console.log(coords)
     if (player.character === "Col. Mustard") {
       player.color = "yellow";
     } else if (player.character === "Mrs.Peacock") {
@@ -306,6 +306,14 @@ $(function () {
     }
   }
 
+  function squareIsPlayable (x, y) {
+    console.log(`${x},${y}`);
+    if (playableSquares.has(`${x},${y}`)) {
+      return true;
+    }
+    return false;
+  }
+
   function doKeyDown(evt) {
     var opponentPosition = [opponent.x, opponent.y];
     var playerPosition;
@@ -320,7 +328,7 @@ $(function () {
           case 38 /* Up arrow was pressed */:
             playerPosition = [player.x, player.y - dy];
             if (
-              player.y - dy > 0 &&
+              squareIsPlayable(player.x, player.y - dy) &&
               !playerPosition.every(function (v, i) {
                 return v === opponentPosition[i];
               })
@@ -339,9 +347,8 @@ $(function () {
             break;
           case 40 /* Down arrow was pressed */:
             playerPosition = [player.x, player.y + dy];
-
             if (
-              player.y + dy < HEIGHT &&
+              squareIsPlayable(player.x, player.y + dy) &&
               !playerPosition.every(function (v, i) {
                 return v === opponentPosition[i];
               })
@@ -360,7 +367,7 @@ $(function () {
           case 37 /* Left arrow was pressed */:
             playerPosition = [player.x - dx, player.y];
             if (
-              player.x - dx > 0 &&
+              squareIsPlayable(player.x - dx, player.y) &&
               !playerPosition.every(function (v, i) {
                 return v === opponentPosition[i];
               })
@@ -378,7 +385,7 @@ $(function () {
           case 39 /* Right arrow was pressed */:
             playerPosition = [player.x + dx, player.y];
             if (
-              player.x + dx < WIDTH &&
+              squareIsPlayable(player.x + dx, player.y) &&
               !playerPosition.every(function (v, i) {
                 return v === opponentPosition[i];
               })

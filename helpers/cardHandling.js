@@ -28,7 +28,6 @@ const dealCards = (cards, players) => {
   return playersCopy;
 };
 
-
 module.exports = {
   shuffle,
   dealCards
