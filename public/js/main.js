@@ -430,7 +430,10 @@ $(function () {
     })
   );
 
-  window.addEventListener("keyup", function checkCollision() {
+  window.addEventListener("keyup", function checkForDoorSquare () {
+    if (doorSquares[`${player.x},${player.y}`]) {
+      console.log(doorSquares[`${player.x},${player.y}`]);
+    }
     // for (var i = 0; i < placesArray.length; i++) {
     //   var playerWidth = player.x - 12.5 + 2 * r;
     //   var playerHeight = player.y - 12.5 + 2 * r;
