@@ -23,6 +23,7 @@ const doorSquares = {
   "85,347": "Billiard Room",
   "232.5,459": "Billiard Room",
   "203,571": "Conservatory",
+  "232.5,151":"Study"
 };
 
 const allDoorsForRoom = {
@@ -37,13 +38,14 @@ const allDoorsForRoom = {
 
 const inRoomCoords = {
   Conservatory: ["173.5,655", "144,655"],
-  Billiard: ["173.5,459", "144,459"],
+  "Billiard Room": ["173.5,459", "144,459"],
   Library: ["173.5,291", "144,291"],
   Study: ["173.5,95", "144,95"],
   Hall: ["409.5,95", "380,95"],
   Lounge: ["675,95", "645.5,95"],
-  DiningRoom: ["704.5,375", "704.5,403"],
+  "Dining Room": ["704.5,375", "704.5,403"],
   Kitchen: ["704.5,655", "675,655"],
+  "Ball Room": ["468.5, 571", "409.5,571"],
 };
 
 const squares = [

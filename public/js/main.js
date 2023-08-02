@@ -429,10 +429,13 @@ $(function () {
       }
     })
   );
+  let currentRoom;
 
   window.addEventListener("keyup", function checkForDoorSquare () {
     if (doorSquares[`${player.x},${player.y}`]) {
-      console.log(doorSquares[`${player.x},${player.y}`]);
+      currentRoom = doorSquares[`${player.x},${player.y}`];
+      $("#enter-prompt").append(`Would you like to enter the ${currentRoom}?`)
+      enterRoomDialog.dialog("open");
     }
     // for (var i = 0; i < placesArray.length; i++) {
     //   var playerWidth = player.x - 12.5 + 2 * r;
@@ -519,6 +522,53 @@ $(function () {
       },
     },
   });
+
+  function placePlayerInRoom (currentRoom) {
+    // have list of possible locations to place player in room,
+    // if spot in room already occupied by opponent place them in next avaialabe space
+    // currently two spaces per room
+    const coordsList = inRoomCoords[currentRoom];
+    coordsList.forEach((coord) => {
+      const xAndY = coord.split(",");
+      const [currentX, currentY] = xAndY;
+      if (opponent.x === currentX && opponent.y === currentY) {
+        return;
+      } else {
+        player.x = currentX;
+        player.y = currentY;
+      }
+    })
+  }
+
+  function confirmEnterRoom (currentRoom) {
+    player.inRoom = true;
+    movesLeft = 0;
+    $("#rooms").val(currentRoom);
+    $("#rooms").attr("disabled", true);
+    $("#rooms").selectmenu("refresh");
+    enterRoomDialog.dialog("close");
+    socket.emit("insideRoom", player.character);
+    $("button:contains('Accuse')").hide();
+    //place player inside room
+    placePlayerInRoom(currentRoom);
+    suggestionDialog.dialog("open");
+  }
+
+  enterRoomDialog = $("#enter-room-form").dialog({
+    autoOpen: false,
+    height: 300,
+    width: 350,
+    modal: true,
+    buttons: {
+      Yes: function () {
+        confirmEnterRoom(currentRoom)
+        enterRoomDialog.dialog("close");
+      },
+      No: function () {
+        enterRoomDialog.dialog("close");
+      }
+    }
+  })
 
   form = dialog.find("form").on("submit", function (event) {
     event.preventDefault();
