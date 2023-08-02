@@ -164,14 +164,14 @@ labelSection(locations, unitSize, 250, 'Locations', 0);
 
 $(function () {
   $('#view-notebook').click(function () {
-    $('#canvas').hide();
+    $('#board').hide();
     $('#notebook').show();
     $(this).hide();
     $('#close-notebook').show();
   });
 
   $('#close-notebook').click(function () {
-    $('#canvas').show();
+    $('#board').show();
     $('#notebook').hide();
     $(this).hide();
     $('#view-notebook').show();
@@ -195,95 +195,26 @@ $(function () {
   var murderLocation;
   var murderWeapon;
 
-  var playerCards = [];
-  var player2Cards = [];
-
-  function drawCircle(x, y, r, color) {
+  function drawCircle (x, y, r, color) {
     context.beginPath();
     context.fillStyle = color;
     context.arc(x, y, r, 0, Math.PI * 2, true);
     context.fill();
   }
 
-  function rect(x, y, w, h) {
-    context.beginPath();
-    context.rect(x, y, w, h);
-    context.closePath();
-    context.fill();
-    context.stroke();
-  }
-
-  function drawGrid(HEIGHT, WIDTH, size) {
-    //      Draw lines horizontally
-    var startingPoint = HEIGHT - size;
-    for (var i = 0; i < HEIGHT / size - 1; i++) {
-      context.beginPath();
-      context.lineWidth = 1;
-      context.moveTo(0, startingPoint);
-      context.lineTo(WIDTH, startingPoint);
-      context.stroke();
-      startingPoint = startingPoint - size;
-    }
-    var startingPoint = WIDTH - size;
-    //Draw lines vertically
-    for (var i = 0; i < WIDTH / size - 1; i++) {
-      context.beginPath();
-      context.lineWidth = 1;
-      context.moveTo(startingPoint, 0);
-      context.lineTo(startingPoint, HEIGHT);
-      context.stroke();
-      startingPoint = startingPoint - size;
-    }
-  }
-
-  //Draw rooms
-
-  function drawRoom(roomName) {
-    context.beginPath();
-    context.lineWidth = 4;
-    context.rect(roomName.x, roomName.y, roomName.width, roomName.height);
-    context.stroke();
-    context.fillStyle = 'rgba(225,225,225,0.5)';
-    context.fillRect(
-      roomName.x + 2,
-      roomName.y + 2,
-      roomName.width - 4,
-      roomName.height - 4
-    );
-    context.font = '20px san-serif';
-    context.fillStyle = 'black';
-    context.fillText(
-      roomName.name,
-      roomName.x + roomName.width / 2 - 25,
-      roomName.height + roomName.y - roomName.height / 2
-    );
-  }
-
-  function clear() {
+  function clear () {
     context.clearRect(0, 0, WIDTH, HEIGHT);
   }
-  // const img = new Image()   // Create new img element
-  // img.src = '../images/clue-board.jpeg' // Set source path
+
   function draw() {
     clear();
-    context.fillStyle = 'white';
-    context.strokeStyle = 'black';
-    rect(0, 0, WIDTH, HEIGHT);
 
     drawCircle(player.x, player.y, r, player.color);
     drawCircle(opponent.x, opponent.y, r, opponent.color);
-
-    drawGrid(HEIGHT, WIDTH, size);
-
-      // // execute drawImage statements here
-      // context.drawImage(img, 0, 0)
-
-
-    placesArray.forEach(drawRoom);
   }
 
   function init() {
-    canvas = document.getElementById('canvas');
+    canvas = document.getElementById('board');
     context = canvas.getContext('2d');
     $('#make-moves').show();
     return setInterval(draw, 10);
@@ -331,83 +262,6 @@ $(function () {
       player.color = 'red';
     }
   }
-
-  var library = { name: 'Library', x: 0, y: 0, width: 300, height: 150 };
-
-  var study = { name: 'Study', x: 350, y: 0, width: 250, height: 150 };
-  var hall = { name: 'Hall', x: 700, y: 0, width: 125, height: 200 };
-  var lounge = { name: 'Lounge', x: 875, y: 0, width: 225, height: 175 };
-  var diningRoom = {
-    name: 'Dining Room',
-    x: 875,
-    y: 250,
-    width: 225,
-    height: 125,
-  };
-  var kitchen = {
-    name: 'Kitchen',
-    x: 625,
-    y: 450,
-    width: 250,
-    height: 150,
-  };
-  var ballroom = {
-    name: 'Ballroom',
-    x: 275,
-    y: 375,
-    width: 225,
-    height: 225,
-  };
-  var conservatory = {
-    name: 'Conservatory',
-    x: 0,
-    y: 300,
-    width: 225,
-    height: 225,
-  };
-  var billiard = {
-    name: 'Billiard Room',
-    x: 925,
-    y: 425,
-    width: 175,
-    height: 175,
-  };
-
-  var placesArray = [
-    library,
-    study,
-    hall,
-    lounge,
-    diningRoom,
-    kitchen,
-    ballroom,
-    conservatory,
-    billiard,
-  ];
-
-  var places = [];
-
-  placesArray.forEach(function (place) {
-    places.push(place.name);
-  });
-
-  var weapons = [
-    'Knife',
-    'Candlestick',
-    'Wrench',
-    'Revolver',
-    'Lead pipe',
-    'Rope',
-  ];
-
-  var suspects = [
-    'Col. Mustard',
-    'Prof. Plum',
-    'Ms. Scarlet',
-    'Mr. Green',
-    'Mrs. Peacock',
-    'Mrs. Black',
-  ];
 
   socket.emit('joinRoom');
 
@@ -879,7 +733,7 @@ $(function () {
       });
     }
   });
-  
+
   socket.on('showCard', function (card) {
     alert(card);
     socket.emit('changeTurn');

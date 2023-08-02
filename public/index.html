@@ -12,6 +12,9 @@
       rel="stylesheet"
     />
     <style>
+      #board {
+          background-image:url("./images/clue-board.jpeg");
+      }
       .ui-dialog-titlebar-close {
         display: none;
       }
@@ -21,10 +24,8 @@
   <body>
     <section>
       <div id="shared-space">
-        <canvas id="canvas" width="1100" height="600">
-          This text is displayed if your browser does not support HTML5 Canvas.
+        <canvas id="board" width="792px" height="752px">
         </canvas>
-
         <div
           style="float: right; width: 210px; height: 600px; display: none"
           id="make-moves"
