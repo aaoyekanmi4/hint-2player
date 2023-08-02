@@ -25,7 +25,6 @@ const dealCards = (cards, players) => {
     playersCopy[playerIdx].cards.push(cardsCopy.pop())
     playerIdx++
   }
-  console.log(playersCopy)
   return playersCopy;
 };
 

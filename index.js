@@ -61,8 +61,8 @@ io.on('connection', function (socket) {
       var how = weaponsCopy.pop();
       var where = locationsCopy.pop();
 
-      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];     
-    
+      var allCards = [...locationsCopy, ...suspectsCopy, ...weaponsCopy];
+
       shuffle(allCards);
       const dealtPlayers = dealCards(allCards, players);
 
@@ -212,6 +212,6 @@ io.on('connection', function (socket) {
   );
 });
 
-http.listen(process.env.PORT || 5000, function () {
-  console.log('listening on port 5000');
+http.listen(process.env.PORT || 5500, function () {
+  console.log('listening on port 5500');
 });

@@ -7,7 +7,6 @@ var y = 0;
 var width = 350;
 var height = 600;
 var unitSize = 25;
-
 var weapons = [
   'knife',
   'candlestick',
@@ -263,7 +262,8 @@ $(function () {
   function clear() {
     context.clearRect(0, 0, WIDTH, HEIGHT);
   }
-
+  // const img = new Image()   // Create new img element
+  // img.src = '../images/clue-board.jpeg' // Set source path
   function draw() {
     clear();
     context.fillStyle = 'white';
@@ -274,6 +274,11 @@ $(function () {
     drawCircle(opponent.x, opponent.y, r, opponent.color);
 
     drawGrid(HEIGHT, WIDTH, size);
+
+      // // execute drawImage statements here
+      // context.drawImage(img, 0, 0)
+
+
     placesArray.forEach(drawRoom);
   }
 
@@ -874,6 +879,7 @@ $(function () {
       });
     }
   });
+  
   socket.on('showCard', function (card) {
     alert(card);
     socket.emit('changeTurn');
@@ -887,7 +893,6 @@ $(function () {
 
   $('#pass').click(function () {
     $('#pass').hide();
-
     socket.emit('changeTurn');
   });
 
