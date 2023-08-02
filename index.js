@@ -6,7 +6,6 @@ const io = require('socket.io')(http);
 const {
   playerJoin,
   getRoomPlayers,
-  assignPlayerPositions,
   getCurrentPlayer,
 } = require('./helpers/players');
 const { shuffle, dealCards } = require('./helpers/cardHandling');
@@ -49,7 +48,7 @@ io.on('connection', function (socket) {
     const playersInRoom = getRoomPlayers(currentPlayer.room);
 
     if (playersInRoom.length === 2) {
-      const players = assignPlayerPositions(playersInRoom);
+      const players = playersInRoom;
       const locationsCopy = [...locations];
       const suspectsCopy = [...suspects];
       const weaponsCopy = [...weapons];
@@ -73,8 +72,6 @@ io.on('connection', function (socket) {
           'grabSocketId',
           player.id,
           player.cards,
-          player.x,
-          player.y
         );
       }
     }
