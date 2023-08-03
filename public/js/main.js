@@ -189,7 +189,6 @@ $(function () {
   var rollAmount;
   var movesLeft;
   var i;
-  var beforeRoom;
   var culprit;
   var murderLocation;
   var murderWeapon;
@@ -226,6 +225,7 @@ $(function () {
     character: "",
     id: "",
     isTurn: false,
+    turnIsComplete: true,
     inRoom: false,
     cards: [],
     trackedTurn: [],
@@ -238,6 +238,7 @@ $(function () {
     character: "",
     id: "",
     isTurn: false,
+    turnIsComplete:false,
     inRoom: false,
     trackedTurn: [],
     x: "",
@@ -300,7 +301,7 @@ $(function () {
   }
 
   function turnChange(movesLeft, player) {
-    if (movesLeft === 0 && player.inRoom === false) {
+    if ((movesLeft === 0 && !player.inRoom) || player.turnIsComplete === true) {
       socket.emit("changeTurn");
     }
   }
@@ -495,12 +496,8 @@ $(function () {
 
         socket.emit("madeSuggestion", suspect, weapon, place, player.id);
 
-        player.x = beforeRoom.x;
-        player.y = beforeRoom.y;
         socket.emit("playerMoved", player.x, player.y);
-        player.inRoom = false;
-
-        player.trackedTurn.push(beforeRoom);
+        player.turnIsComplete = true;
       },
       Accuse: function () {
         suggestionDialog.dialog("close");
@@ -705,6 +702,11 @@ $(function () {
 
   socket.on("startTurn", function (turnValue) {
     player.isTurn = turnValue;
+    player.turnIsComplete = false;
+    if (player.inRoom) {
+      $("#roll-option").show();
+      roomOptionsDialog.dialog("open");
+    }
     $("#rollDye").show();
     $("#accusation").show();
     $(".showRoll").hide();

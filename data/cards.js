@@ -2,7 +2,7 @@ const locations = [
   'Hall',
   'Study',
   'Dining Room',
-  'Ballroom',
+  'Ball Room',
   'Billiard Room',
   'Conservatory',
   'Lounge',
