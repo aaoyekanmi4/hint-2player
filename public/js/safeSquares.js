@@ -16,10 +16,10 @@ const doorSquares = {
   "498,375": "Dining Room",
   "557,263": "Dining Room",
   "557,207": "Lounge",
-  "409.5, 235": "Hall",
-  "380, 235": "Hall",
+  "409.5,235": "Hall",
+  "380,235": "Hall",
   "291.5,151": "Hall",
-  "262, 263": "Library",
+  "262,263": "Library",
   "85,347": "Billiard Room",
   "232.5,459": "Billiard Room",
   "203,571": "Conservatory",
@@ -47,6 +47,13 @@ const inRoomCoords = {
   Kitchen: ["704.5,655", "675,655"],
   "Ball Room": ["468.5, 571", "409.5,571"],
 };
+
+const secretPassages = {
+  Conservatory: "Lounge",
+  Lounge: "Conservatory",
+  Kitchen: "Study",
+  Study: "Kitchen"
+}
 
 const squares = [
   "321,711",

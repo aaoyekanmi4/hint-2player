@@ -207,7 +207,6 @@ $(function () {
 
   function draw() {
     clear();
-
     drawCircle(player.x, player.y, r, player.color);
     drawCircle(opponent.x, opponent.y, r, opponent.color);
   }
@@ -307,7 +306,6 @@ $(function () {
   }
 
   function squareIsPlayable (x, y) {
-    console.log(`${x},${y}`);
     if (playableSquares.has(`${x},${y}`)) {
       return true;
     }
@@ -429,12 +427,12 @@ $(function () {
       }
     })
   );
-  let currentRoom;
 
+  let currentRoom;
   window.addEventListener("keyup", function checkForDoorSquare () {
     if (doorSquares[`${player.x},${player.y}`]) {
       currentRoom = doorSquares[`${player.x},${player.y}`];
-      $("#enter-prompt").append(`Would you like to enter the ${currentRoom}?`)
+      $("#enter-prompt").text(`Would you like to enter the ${currentRoom}?`)
       enterRoomDialog.dialog("open");
     }
     // for (var i = 0; i < placesArray.length; i++) {
@@ -524,9 +522,7 @@ $(function () {
   });
 
   function placePlayerInRoom (currentRoom) {
-    // have list of possible locations to place player in room,
     // if spot in room already occupied by opponent place them in next avaialabe space
-    // currently two spaces per room
     const coordsList = inRoomCoords[currentRoom];
     coordsList.forEach((coord) => {
       const xAndY = coord.split(",");
@@ -542,17 +538,51 @@ $(function () {
 
   function confirmEnterRoom (currentRoom) {
     player.inRoom = true;
-    movesLeft = 0;
-    $("#rooms").val(currentRoom);
-    $("#rooms").attr("disabled", true);
-    $("#rooms").selectmenu("refresh");
     enterRoomDialog.dialog("close");
-    socket.emit("insideRoom", player.character);
-    $("button:contains('Accuse')").hide();
-    //place player inside room
     placePlayerInRoom(currentRoom);
+    if (secretPassages[currentRoom]) {
+         $("#secret-passage-btn").text(`Go to ${secretPassages[currentRoom]}`);
+      $("#secret-passage-btn").show();
+        $("#secret-passage-btn").click(function () {
+          useSecretPassage(currentRoom);
+        });
+    }
+      $("#make-suggestion").click(function () {
+        makeSuggestion(currentRoom);
+      });
+    roomOptionsDialog.dialog("open")
+  }
+
+  function makeSuggestion (currentRoom) {
+     console.log(currentRoom)
+     movesLeft = 0;
+     $("#rooms").val(currentRoom);
+     $("#rooms").attr("disabled", true);
+     $("#rooms").selectmenu("refresh");
+     socket.emit("insideRoom", player.character);
+    $("button:contains('Accuse')").hide();
+    roomOptionsDialog.dialog("close");
     suggestionDialog.dialog("open");
   }
+
+
+
+  function useSecretPassage (currentRoom) {
+    const newRoom = secretPassages[currentRoom];
+     if (secretPassages[newRoom]) {
+       $("#secret-passage-btn").text(`Go to ${secretPassages[newRoom]}`);
+       $("#secret-passage-btn").show();
+     }
+    currentRoom = newRoom;
+    confirmEnterRoom(currentRoom)
+  }
+
+  roomOptionsDialog = $("#room-options").dialog({
+    autoOpen: false,
+    height: 300,
+    width: 350,
+    modal: true,
+  });
 
   enterRoomDialog = $("#enter-room-form").dialog({
     autoOpen: false,

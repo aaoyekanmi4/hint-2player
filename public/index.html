@@ -204,7 +204,7 @@
             <option class="room" value="Hall">Hall</option>
             <option class="room" value="Conservatory">Conservatory</option>
             <option class="room" value="Billiard Room">Billiard Room</option>
-            <option class="room" value="Ballroom">Ballroom</option>
+            <option class="room" value="Ball Room">Ball Room</option>
             <option class="room" value="Library">Library</option>
             <option class="room" value="Kitchen">Kitchen</option>
             <option class="room" value="Lounge">Lounge</option>
@@ -213,6 +213,30 @@
         <div style="display: none;" id="enter-room-form" title="Enter room?">
         <form id="enter-room">
           <p id="enter-prompt"></p>
+        </form>
+      </div>
+          <div style="display: none;" id="room-options" title="Room Options">
+        <form id="pick-option">
+         <button
+            id="rollDye"
+            style="font-size: 25px; display:none;"
+            class="ui-button ui-widget ui-corner-all"
+          >
+            Roll Dice
+            <img
+              style="width: 30px; height: 30px; background-color: transparent"
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/2-Dice-Icon.svg/2000px-2-Dice-Icon.svg.png"
+            />
+            </button>
+          <button id="make-suggestion" class="ui-button ui-widget ui-corner-all"
+          style="display:block;">
+            Make Suggestion <i class="fa fa-lightbulb-o" aria-hidden="true"></i>
+          </button>
+            <button id="secret-passage-btn"
+            style="display:none;margin-top:20px;"
+            class="ui-button ui-widget ui-corner-all">
+           <i class="fa-solid fa-person-through-window" aria-hidden="true"></i>
+          </button>
         </form>
       </div>
     </section>
