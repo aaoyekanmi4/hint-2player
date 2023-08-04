@@ -36,20 +36,6 @@ const playerLeave = (id) => {
   }
 };
 
-// const assignPlayerPositions = (players) => {
-//   const playersCopy = _.cloneDeep(players)
-//   return playersCopy.map((player, index) => {
-//     if (index === 0) {
-//       player.x = 321;
-//       player.y = 711;
-//     } else if (index === 1) {
-//       player.x = 55.5;
-//       player.y = 543;
-//     }
-//     return player;
-//   });
-// };
-
 module.exports = {
   playerJoin,
   playerLeave,

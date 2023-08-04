@@ -20,6 +20,7 @@ const doorSquares = {
   "380,235": "Hall",
   "291.5,151": "Hall",
   "262,263": "Library",
+  "144,347":"Library",
   "85,347": "Billiard Room",
   "232.5,459": "Billiard Room",
   "203,571": "Conservatory",
@@ -28,11 +29,11 @@ const doorSquares = {
 
 const allDoorsForRoom = {
   "Ball Room": ["262,571", "321,487", "468.5,487", "527.5,571"],
-  Lounge:["557,207"],
+  Lounge: ["557,207"],
   Kitchen: ["616,515"],
   "Dining Room": ["498,375", "557,263"],
   Hall: ["409.5,235", "380,235", "291.5,151"],
-  Library: ["262,263"],
+  Library: ["262,263", "144,347"],
   "Billiard Room": ["85,347", "232.5,459"],
   Conservatory: ["203,571"],
   Study: ["232.5,151"],
