@@ -193,11 +193,11 @@ $(function () {
   var murderLocation;
   var murderWeapon;
 
-  function drawCircle(x, y, r, color) {
-    context.beginPath();
-    context.fillStyle = color;
-    context.arc(x, y, r, 0, Math.PI * 2, true);
-    context.fill();
+  function drawCircle (x, y, r, color) {
+      context.beginPath()
+      context.arc(x, y, r, 0, Math.PI * 2, true)
+      context.fillStyle = color
+      context.fill()
   }
 
   function clear() {
@@ -214,7 +214,7 @@ $(function () {
     canvas = document.getElementById("board");
     context = canvas.getContext("2d");
     $("#make-moves").show();
-    return setInterval(draw, 10);
+    draw();
   }
 
   //calls io from index.js
@@ -228,7 +228,6 @@ $(function () {
     turnIsComplete: true,
     inRoom: false,
     cards: [],
-    trackedTurn: [],
     x: "",
     y: "",
     color: "",
@@ -240,7 +239,6 @@ $(function () {
     isTurn: false,
     turnIsComplete:false,
     inRoom: false,
-    trackedTurn: [],
     x: "",
     y: "",
     color: "",
@@ -301,7 +299,7 @@ $(function () {
   }
 
   function turnChange(movesLeft, player) {
-    if ((movesLeft === 0 && !player.inRoom) || player.turnIsComplete === true) {
+    if (movesLeft === 0 && (!player.inRoom || player.turnIsComplete)) {
       socket.emit("changeTurn");
     }
   }
@@ -316,7 +314,7 @@ $(function () {
   function doKeyDown(evt) {
     var opponentPosition = [opponent.x, opponent.y];
     var playerPosition;
-
+    console.log(evt.keyCode)
     if (player.isTurn === true) {
       if (typeof rollAmount !== "undefined") {
         if (i === rollAmount || movesLeft === 0) {
@@ -338,14 +336,20 @@ $(function () {
               movesLeft = rollAmount - i;
 
               socket.emit("trackRoll", movesLeft, rollAmount);
-              player.trackedTurn.push({ x: +player.x, y: +player.y });
-
+              draw();
+                checkForDoorSquare();
               turnChange(movesLeft, player);
             }
 
             break;
           case 40 /* Down arrow was pressed */:
             playerPosition = [player.x, player.y + dy];
+            console.log(squareIsPlayable(player.x, player.y + dy));
+            console.log(
+              !playerPosition.every(function (v, i) {
+                return v === opponentPosition[i];
+              })
+            );
             if (
               squareIsPlayable(player.x, player.y + dy) &&
               !playerPosition.every(function (v, i) {
@@ -357,8 +361,8 @@ $(function () {
 
               movesLeft = rollAmount - i;
               socket.emit("trackRoll", movesLeft, rollAmount);
-              player.trackedTurn.push({ x: +player.x, y: +player.y });
-
+              draw();
+                checkForDoorSquare();
               turnChange(movesLeft, player);
             }
 
@@ -376,8 +380,8 @@ $(function () {
               movesLeft = rollAmount - i;
 
               socket.emit("trackRoll", movesLeft, rollAmount);
-              player.trackedTurn.push({ x: +player.x, y: +player.y });
-
+              draw();
+                checkForDoorSquare();
               turnChange(movesLeft, player);
             }
             break;
@@ -394,8 +398,8 @@ $(function () {
 
               movesLeft = rollAmount - i;
               socket.emit("trackRoll", movesLeft, rollAmount);
-              player.trackedTurn.push({ x: +player.x, y: +player.y });
-
+              draw();
+              checkForDoorSquare();
               turnChange(movesLeft, player);
             }
             break;
@@ -421,49 +425,24 @@ $(function () {
       if (player.id === id) {
         player.y = y;
         player.x = x;
+        draw();
       } else {
         opponent.y = y;
         opponent.x = x;
         drawCircle(opponent.x, opponent.y, r, opponent.color);
+        draw();
       }
     })
   );
 
   let currentRoom;
-  window.addEventListener("keyup", function checkForDoorSquare () {
+   function checkForDoorSquare () {
     if (doorSquares[`${player.x},${player.y}`]) {
       currentRoom = doorSquares[`${player.x},${player.y}`];
       $("#enter-prompt").text(`Would you like to enter the ${currentRoom}?`)
       enterRoomDialog.dialog("open");
     }
-    // for (var i = 0; i < placesArray.length; i++) {
-    //   var playerWidth = player.x - 12.5 + 2 * r;
-    //   var playerHeight = player.y - 12.5 + 2 * r;
-
-    //   if (
-    //     [i].x < playerWidth &&
-    //     placesArray[i].x + placesArray[i].width > player.x &&
-    //     placesArray[i].y < playerHeight &&
-    //     placesArray[i].y + placesArray[i].height > player.y
-    //   ) {
-    //     $("#rooms").val(placesArray[i].name);
-    //     $("#rooms").attr("disabled", true);
-    //     $("#rooms").selectmenu("refresh");
-
-    //     beforeRoom = player.trackedTurn[player.trackedTurn.length - 2];
-
-    //     player.inRoom = true;
-
-    //     movesLeft = 0;
-    //     socket.emit("trackRoll", movesLeft, rollAmount);
-    //     socket.emit("insideRoom", player.character);
-
-    //     $("button:contains('Accuse')").hide();
-
-    //     suggestionDialog.dialog("open");
-      // }
-    // }
-  });
+  };
 
   var suggestionDialog;
   var dialog;
@@ -529,6 +508,7 @@ $(function () {
       } else {
         player.x = currentX;
         player.y = currentY;
+        socket.emit("playerMoved", player.x, player.y);
       }
     })
   }
@@ -551,7 +531,6 @@ $(function () {
   }
 
   function makeSuggestion (currentRoom) {
-     console.log(currentRoom)
      movesLeft = 0;
      $("#rooms").val(currentRoom);
      $("#rooms").attr("disabled", true);
@@ -562,8 +541,6 @@ $(function () {
     suggestionDialog.dialog("open");
   }
 
-
-
   function useSecretPassage (currentRoom) {
     const newRoom = secretPassages[currentRoom];
      if (secretPassages[newRoom]) {
@@ -572,6 +549,48 @@ $(function () {
      }
     currentRoom = newRoom;
     confirmEnterRoom(currentRoom)
+  }
+
+  function markExits (doors) {
+    const markers = [];
+    doors.forEach((door) => {
+      const coords = door.split(",");
+      x = parseFloat(coords[0])
+      y = parseFloat(coords[1])
+
+      let circle = new Path2D();
+      markers.push( circle);
+      circle.arc(x,y,r,0, 2 * Math.PI);
+      context.stroke(circle);
+
+    })
+    for (let i = 0; i < markers.length; i++) {
+      canvas.addEventListener("click", function (event) {
+        if (context.isPointInPath(markers[i], event.clientX, event.clientY)) {
+          const coords = doors[i].split(",");
+            x = parseFloat(coords[0]);
+            y = parseFloat(coords[1]);
+          player.x = x
+          player.y = y
+          socket.emit("playerMoved", player.x, player.y);
+          i += 1
+          movesLeft = rollAmount - i
+          socket.emit("trackRoll", movesLeft, rollAmount);
+          player.inRoom = false
+          turnChange(movesLeft, player);
+          canvas.focus();
+          draw()
+        }
+      })
+    }
+  }
+
+  function moveOutOfRoom (currentRoom) {
+    rollDye();
+    roomOptionsDialog.dialog("close");
+    //show squares you can move to
+    const doorCoords = allDoorsForRoom[currentRoom];
+    markExits(doorCoords);
   }
 
   roomOptionsDialog = $("#room-options").dialog({
@@ -705,6 +724,9 @@ $(function () {
     player.turnIsComplete = false;
     if (player.inRoom) {
       $("#roll-option").show();
+      $("#roll-option").click(function () {
+        moveOutOfRoom(currentRoom)
+      })
       roomOptionsDialog.dialog("open");
     }
     $("#rollDye").show();
@@ -720,7 +742,6 @@ $(function () {
     $("#accusation").hide();
     $(".showRoll").show();
     $(".showMoves").show();
-
     $("#whoseTurn").text(opponent.character.toString() + "'s turn");
     $("#rolled-number").text("");
     $("#moves-left").text("");
