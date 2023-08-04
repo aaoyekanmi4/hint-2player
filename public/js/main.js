@@ -285,7 +285,7 @@ $(function () {
   });
 
   function rollDye() {
-    rollAmount = Math.floor(Math.random() * 12 + 1);
+    rollAmount = Math.floor(Math.random() * 12 + 2);
 
     $("#rollDye").hide();
     $("#accusation").hide();
