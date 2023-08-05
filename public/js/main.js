@@ -318,10 +318,10 @@ $(function () {
   function doKeyDown(evt) {
     var opponentPosition = [opponent.x, opponent.y];
     var playerPosition;
-    console.log(evt.keyCode);
+
     if (player.isTurn === true) {
       if (typeof rollAmount !== "undefined") {
-        if (i === rollAmount || movesLeft === 0) {
+        if (i === rollAmount || movesLeft === 0 || player.inRoom) {
           return;
         }
 
@@ -417,22 +417,24 @@ $(function () {
   }
 
   document.getElementById("rollDye").addEventListener("click", rollDye);
-  window.addEventListener("keyup", doKeyDown, true);
-  window.addEventListener(
-    "keyup",
-    socket.on("playerMoved", function (x, y, id) {
-      if (player.id === id) {
-        player.y = y;
-        player.x = x;
-        draw();
-      } else {
-        opponent.y = y;
-        opponent.x = x;
-        drawCircle(opponent.x, opponent.y, r, opponent.color);
-        draw();
-      }
-    })
-  );
+    window.addEventListener("keyup", doKeyDown, true)
+
+
+    window.addEventListener(
+      "keyup",
+      socket.on("playerMoved", function (x, y, id) {
+        if (player.id === id) {
+          player.y = y
+          player.x = x
+          draw()
+        } else {
+          opponent.y = y
+          opponent.x = x
+          drawCircle(opponent.x, opponent.y, r, opponent.color)
+          draw()
+        }
+      })
+    )
 
   let currentRoom;
   function checkForDoorSquare() {
