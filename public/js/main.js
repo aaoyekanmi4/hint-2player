@@ -335,9 +335,8 @@ $(function () {
               })
             ) {
               player.y -= dy;
-              i += 1;
 
-              movesLeft = rollAmount - i;
+              movesLeft--;
 
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
@@ -361,9 +360,8 @@ $(function () {
               })
             ) {
               player.y += dy;
-              i += 1;
 
-              movesLeft = rollAmount - i;
+              movesLeft--;
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
               checkForDoorSquare();
@@ -380,8 +378,7 @@ $(function () {
               })
             ) {
               player.x -= dx;
-              i += 1;
-              movesLeft = rollAmount - i;
+              movesLeft--;
 
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
@@ -398,9 +395,7 @@ $(function () {
               })
             ) {
               player.x += dx;
-              i += 1;
-
-              movesLeft = rollAmount - i;
+              movesLeft--;
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
               checkForDoorSquare();
@@ -527,9 +522,10 @@ $(function () {
     } else if (movesLeft > 0) {
       $("#leave-option").show()
       $("#roll-option").hide()
-      $("#leave-option").click(function () {
-        leaveRoom(currentRoom)
-      })
+         $("#leave-option").off("click")
+         $("#leave-option").click(function () {
+           leaveRoom(currentRoom);
+         });
     }
     if (secretPassages[currentRoom]) {
       $("#secret-passage-btn").text(`Go to ${secretPassages[currentRoom]}`)
@@ -570,8 +566,10 @@ $(function () {
     confirmEnterRoom(currentRoom);
   }
 
-  function markExits(doors) {
+  function markExits (doors) {
+    console.log(doors);
     const markers = [];
+    console.log(markers)
     doors.forEach((door) => {
       const coords = door.split(",");
       x = parseFloat(coords[0]);
@@ -591,8 +589,8 @@ $(function () {
           player.x = x;
           player.y = y;
           socket.emit("playerMoved", player.x, player.y);
-          i += 1;
-          movesLeft = rollAmount - i;
+          i++;
+          movesLeft--;
           socket.emit("trackRoll", movesLeft, rollAmount);
           player.inRoom = false;
           turnChange(movesLeft, player);
@@ -733,9 +731,9 @@ $(function () {
     if (player.id !== id) {
       $("#opponents-choice").append("Your opponent picked " + msg);
     }
-
     removeCharacter(msg);
   });
+
   socket.on("opponentInfo", function (id, x, y, color, character) {
     opponent.id = id;
     opponent.x = x;
