@@ -1,167 +1,3 @@
-const socket = io();
-/**TODO REFACTOR INTO FILES */
-var canvas = document.getElementById("myCanvas");
-var context = canvas.getContext("2d");
-var x = 0;
-var y = 0;
-var width = 350;
-var height = 600;
-var unitSize = 25;
-var weapons = [
-  "knife",
-  "candlestick",
-  "wrench",
-  "revolver",
-  "lead pipe",
-  "rope",
-];
-
-var suspects = [
-  "Col. Mustard",
-  "Prof. Plum",
-  "Ms. Scarlet",
-  "Mr. Green",
-  "Mrs. Peacock",
-  "Mrs. Black",
-];
-
-var locations = [
-  "hall",
-  "study",
-  "dining room",
-  "ballroom",
-  "billiard",
-  "conservatory",
-  "lounge",
-  "kitchen",
-  "library",
-];
-
-//Draw grid border(rectangle)
-function drawBorder(x, y, width, height) {
-  context.beginPath();
-  context.lineWidth = 4;
-  context.rect(x, y, width, height);
-  context.strokeStyle = "black";
-  context.stroke();
-}
-
-//Draw horizontal lines of grid
-function drawRows(x, width, height, unitSize) {
-  var currentHeight = height - unitSize;
-  for (var i = 0; i < height / unitSize + 1; i++) {
-    context.beginPath();
-    context.lineWidth = 1;
-    context.moveTo(x, currentHeight);
-    context.lineTo(width, currentHeight);
-    context.stroke();
-    currentHeight = currentHeight - unitSize;
-  }
-}
-
-//Draw lines vertically
-function drawColumns(y, width, height, unitSize) {
-  var currentWidth = width - unitSize;
-
-  for (var i = 0; i < 8; i++) {
-    context.beginPath();
-    context.lineWidth = 1;
-    context.moveTo(currentWidth, y);
-    context.lineTo(currentWidth, height);
-    context.stroke();
-    currentWidth = currentWidth - unitSize;
-  }
-}
-
-//Row labels and headings for each card
-function labelSection(array, unitSize, start, title, titleY) {
-  var margin = 5;
-
-  for (var i = 0; i < array.length; i++) {
-    context.font = "15px Arial";
-    context.fillStyle = "black";
-    context.textAlign = "left";
-    context.fillText(array[i], margin, start - margin);
-    start = start - unitSize;
-  }
-
-  //Section header
-  context.fillStyle = "black";
-  context.fillRect(0, titleY, 350, 25);
-  context.font = "20px san-serif";
-  context.fillStyle = "white";
-  context.fillText(title, 0, start - margin);
-}
-
-//Create 2D array to track clicked squares
-function matrix(rows, cols, defaultValue) {
-  var grid = [];
-
-  // Creates rows of empty lists
-  for (var i = 0; i < rows; i++) {
-    grid.push([]);
-
-    // Starting j at 6 to account for row labels which do not need a value
-    for (var j = 6; j < cols; j++) {
-      grid[i][j] = defaultValue;
-    }
-  }
-
-  return grid;
-}
-
-//Get current mouse position
-function getMousePos(canvas, evt) {
-  var rect = canvas.getBoundingClientRect();
-  return {
-    x: evt.clientX - rect.left,
-    y: evt.clientY - rect.top,
-  };
-}
-
-//Function to fill gridsquare with a black square
-function fill(color, row, column, unitSize) {
-  context.fillStyle = color;
-  var side = unitSize - 2;
-  var x = row * unitSize + 1;
-  var y = column * unitSize + 1;
-  context.fillRect(x, y, side, side);
-}
-
-//Get mouse position on click and fill square at that position
-canvas.addEventListener("click", function (evt) {
-  var mousePos = getMousePos(canvas, evt);
-
-  var column = Math.floor(mousePos.x / unitSize);
-  var row = Math.floor(mousePos.y / unitSize);
-
-  //On initial click, fill grid square with smaller black square
-  if (grid[row][column] === 0) {
-    fill("black", column, row, 25);
-    grid[row][column] = 1;
-  }
-
-  //If square is black, change it back to white.
-  else if (grid[row][column] === 1) {
-    fill("white", column, row, 25);
-    grid[row][column] = 0;
-  }
-});
-
-var grid = matrix(24, 14, 0);
-
-drawBorder(x, y, width, height);
-
-drawRows(x, width, height, unitSize);
-
-drawColumns(y, width, height, unitSize);
-
-labelSection(weapons, unitSize, height, "Weapons", 425);
-
-labelSection(suspects, unitSize, 425, "Suspects", 250);
-
-labelSection(locations, unitSize, 250, "Locations", 0);
-
 $(function () {
   $("#view-notebook").click(function () {
     $("#board").hide();
@@ -227,6 +63,7 @@ $(function () {
     isTurn: false,
     turnIsComplete: true,
     inRoom: false,
+    currentRoom: "",
     cards: [],
     x: "",
     y: "",
@@ -248,7 +85,6 @@ $(function () {
     const coords = startingSquares[player.character].split(",");
     player.x = parseFloat(coords[0]);
     player.y = parseFloat(coords[1]);
-    console.log(coords);
     if (player.character === "Col. Mustard") {
       player.color = "yellow";
     } else if (player.character === "Mrs.Peacock") {
@@ -321,7 +157,9 @@ $(function () {
 
     if (player.isTurn === true) {
       if (typeof rollAmount !== "undefined") {
-        if (i === rollAmount || movesLeft === 0 || player.inRoom) {
+        if (i === rollAmount
+          || movesLeft === 0
+          || player.inRoom) {
           return;
         }
 
@@ -347,12 +185,6 @@ $(function () {
             break;
           case 40 /* Down arrow was pressed */:
             playerPosition = [player.x, player.y + dy];
-            console.log(squareIsPlayable(player.x, player.y + dy));
-            console.log(
-              !playerPosition.every(function (v, i) {
-                return v === opponentPosition[i];
-              })
-            );
             if (
               squareIsPlayable(player.x, player.y + dy) &&
               !playerPosition.every(function (v, i) {
@@ -403,7 +235,6 @@ $(function () {
             }
             break;
         }
-
         socket.emit("playerMoved", player.x, player.y);
       }
     }
@@ -418,7 +249,6 @@ $(function () {
 
   document.getElementById("rollDye").addEventListener("click", rollDye);
     window.addEventListener("keyup", doKeyDown, true)
-
 
     window.addEventListener(
       "keyup",
@@ -436,11 +266,10 @@ $(function () {
       })
     )
 
-  let currentRoom;
   function checkForDoorSquare() {
     if (doorSquares[`${player.x},${player.y}`]) {
-      currentRoom = doorSquares[`${player.x},${player.y}`];
-      $("#enter-prompt").text(`Would you like to enter the ${currentRoom}?`);
+      player.currentRoom = doorSquares[`${player.x},${player.y}`];
+      $("#enter-prompt").text(`Would you like to enter the ${player.currentRoom}?`);
       enterRoomDialog.dialog("open");
     }
   }
@@ -498,9 +327,9 @@ $(function () {
     },
   });
 
-  function placePlayerInRoom(currentRoom) {
-    // if spot in room already occupied by opponent place them in next avaialabe space
-    const coordsList = inRoomCoords[currentRoom];
+  function placePlayerInRoom() {
+    // if spot in room already occupied by opponent place them in next available space
+    const coordsList = inRoomCoords[player.currentRoom];
     coordsList.forEach((coord) => {
       const xAndY = coord.split(",");
       const [currentX, currentY] = xAndY;
@@ -514,9 +343,9 @@ $(function () {
     });
   }
 
-  function confirmEnterRoom(currentRoom) {
+  function confirmEnterRoom() {
     enterRoomDialog.dialog("close");
-    placePlayerInRoom(currentRoom);
+    placePlayerInRoom();
     player.inRoom = true;
     if (movesLeft === 0) {
       $("#roll-option").hide()
@@ -524,32 +353,40 @@ $(function () {
     } else if (movesLeft > 0) {
       $("#leave-option").show()
       $("#roll-option").hide()
-         $("#leave-option").off("click")
-         $("#leave-option").click(function () {
-           leaveRoom(currentRoom);
-         });
+      $("#leave-option").off("click")
+      $("#leave-option").click(function () {
+        leaveRoom(player.wcurrentRoom)
+      })
+    } else {
+      $("#leave-option").hide();
+      $("#roll-option").show();
+      $("#roll-option").off("click");
+      $("#roll-option").click(function () {
+        rollOutOfRoom(player.currentRoom)
+      })
     }
-    if (secretPassages[currentRoom]) {
-      $("#secret-passage-btn").text(`Go to ${secretPassages[currentRoom]}`)
+    if (secretPassages[player.currentRoom]) {
+      $("#secret-passage-btn").text(`Go to ${secretPassages[player.currentRoom]}`)
       $("#secret-passage-btn").show()
+      $("#secret-passage-btn").off("click");
       $("#secret-passage-btn").click(function () {
-        useSecretPassage(currentRoom)
+        useSecretPassage(player.currentRoom)
       })
     } else {
       $("#secret-passage-btn").hide();
     }
 
     $("#make-suggestion").click(function () {
-      makeSuggestion(currentRoom);
+      makeSuggestion();
     });
     roomOptionsDialog.dialog("open");
   }
 
-  function makeSuggestion(currentRoom) {
+  function makeSuggestion() {
     movesLeft = 0;
     socket.emit("trackRoll", movesLeft, rollAmount);
 
-    $("#rooms").val(currentRoom);
+    $("#rooms").val(player.currentRoom);
     $("#rooms").attr("disabled", true);
     $("#rooms").selectmenu("refresh");
     socket.emit("insideRoom", player.character);
@@ -558,20 +395,18 @@ $(function () {
     suggestionDialog.dialog("open");
   }
 
-  function useSecretPassage(currentRoom) {
-    const newRoom = secretPassages[currentRoom];
+  function useSecretPassage() {
+    let newRoom = secretPassages[player.currentRoom];
     if (secretPassages[newRoom]) {
       $("#secret-passage-btn").text(`Go to ${secretPassages[newRoom]}`);
       $("#secret-passage-btn").show();
     }
-    currentRoom = newRoom;
-    confirmEnterRoom(currentRoom);
+    player.currentRoom = newRoom;
+    confirmEnterRoom(newRoom);
   }
 
   function markExits (doors) {
-    console.log(doors);
     const markers = [];
-    console.log(markers)
     doors.forEach((door) => {
       const coords = door.split(",");
       x = parseFloat(coords[0]);
@@ -603,18 +438,18 @@ $(function () {
     }
   }
 
-  function rollOutOfRoom(currentRoom) {
+  function rollOutOfRoom() {
     rollDye();
     roomOptionsDialog.dialog("close");
     //show squares you can move to
-    const doorCoords = allDoorsForRoom[currentRoom];
+    const doorCoords = allDoorsForRoom[player.currentRoom];
     markExits(doorCoords);
   }
 
-  function leaveRoom(currentRoom) {
+  function leaveRoom() {
     roomOptionsDialog.dialog("close");
     //show squares you can move to
-    const doorCoords = allDoorsForRoom[currentRoom];
+    const doorCoords = allDoorsForRoom[player.currentRoom];
     markExits(doorCoords);
   }
 
@@ -632,7 +467,7 @@ $(function () {
     modal: true,
     buttons: {
       Yes: function () {
-        confirmEnterRoom(currentRoom);
+        confirmEnterRoom();
         enterRoomDialog.dialog("close");
       },
       No: function () {
@@ -692,7 +527,6 @@ $(function () {
   });
 
   //get socket ids from index.js and add them to players object
-
   socket.on("grabSocketId", function (id, cards) {
     player.id = id;
     player.cards = cards;
@@ -751,8 +585,9 @@ $(function () {
         if (!movesLeft) {
           $("#roll-option").show();
           $("#leave-option").hide();
+          $("#roll-option").off("click");
           $("#roll-option").click(function () {
-            rollOutOfRoom(currentRoom);
+            rollOutOfRoom(player.currentRoom);
           });
           roomOptionsDialog.dialog("open");
         }
