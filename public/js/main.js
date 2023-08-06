@@ -56,7 +56,6 @@ $(function () {
   //calls io from index.js
   var socket = io();
 
-  //objects for player and opponent
   var player = {
     character: "",
     id: "",
@@ -355,7 +354,7 @@ $(function () {
       $("#roll-option").hide()
       $("#leave-option").off("click")
       $("#leave-option").click(function () {
-        leaveRoom(player.wcurrentRoom)
+        leaveRoom(player.currentRoom)
       })
     } else {
       $("#leave-option").hide();
