@@ -5,6 +5,7 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const {
   playerJoin,
+  playerLeave,
   getRoomPlayers,
   getCurrentPlayer,
 } = require('./helpers/players');
@@ -28,25 +29,27 @@ io.on('connection', function (socket) {
     var socketIndex = socket_ids.indexOf(socket.id);
 
     socket_ids.splice(socketIndex, 1);
+    playerLeave(socket.id);
   });
-  // increase room number when more than 2 clients join
-  if (
-    io.nsps['/'].adapter.rooms[`room-${roomno}`] &&
-    io.nsps['/'].adapter.rooms[`room-${roomno}`].length > 1
-  )
-    roomno++;
 
   socket.on('joinRoom', () => {
+    // increase room number when more than 2 clients join
+    if (
+      io.nsps["/"].adapter.rooms[`room-${roomno}`] &&
+      io.nsps["/"].adapter.rooms[`room-${roomno}`].length > 1
+    ) {
+      roomno++;
+    }
     const currentPlayer = playerJoin(socket.id, `room-${roomno}`);
     socket.join(`room-${roomno}`);
 
     //Send this event to everyone in the room.
     io.sockets
       .in(currentPlayer.room)
-      .emit('connectToRoom', 'You are in room no. ' + roomno);
+      .emit("connectToRoom", "You are in room no. " + roomno);
 
     const playersInRoom = getRoomPlayers(currentPlayer.room);
-
+    console.log(playersInRoom.length)
     if (playersInRoom.length === 2) {
       const players = playersInRoom;
       const locationsCopy = [...locations];
@@ -65,14 +68,10 @@ io.on('connection', function (socket) {
       shuffle(allCards);
       const dealtPlayers = dealCards(allCards, players);
 
-      io.to(currentPlayer.room).emit('cardsChosen', who, where, how);
+      io.to(currentPlayer.room).emit("cardsChosen", who, where, how);
 
       for (let player of dealtPlayers) {
-        io.to(player.id).emit(
-          'grabSocketId',
-          player.id,
-          player.cards,
-        );
+        io.to(player.id).emit("grabSocketId", player.id, player.cards);
       }
     }
   });
