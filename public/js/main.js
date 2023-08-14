@@ -60,7 +60,7 @@ $(function () {
     character: "",
     id: "",
     isTurn: false,
-    turnIsComplete: true,
+    turnIsComplete: false,
     inRoom: false,
     currentRoom: "",
     cards: [],
@@ -137,8 +137,8 @@ $(function () {
     return rollAmount;
   }
 
-  function turnChange(movesLeft, player) {
-    if (movesLeft === 0 && (!player.inRoom || player.turnIsComplete)) {
+  function turnChange (movesLeft, player) {
+    if (movesLeft === 0 && player.turnIsComplete) {
       socket.emit("changeTurn");
     }
   }
@@ -177,8 +177,10 @@ $(function () {
 
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
-              checkForDoorSquare();
-              turnChange(movesLeft, player);
+              if (!checkForDoorSquare()) {
+                player.turnIsComplete = true;
+                turnChange(movesLeft, player);
+              }
             }
 
             break;
@@ -195,8 +197,10 @@ $(function () {
               movesLeft--;
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
-              checkForDoorSquare();
+              if (!checkForDoorSquare()) {
+              player.turnIsComplete = true;
               turnChange(movesLeft, player);
+            }
             }
 
             break;
@@ -213,8 +217,10 @@ $(function () {
 
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
-              checkForDoorSquare();
-              turnChange(movesLeft, player);
+              if (!checkForDoorSquare()) {
+                 player.turnIsComplete = true;
+                 turnChange(movesLeft, player);
+               }
             }
             break;
           case 39 /* Right arrow was pressed */:
@@ -229,8 +235,10 @@ $(function () {
               movesLeft--;
               socket.emit("trackRoll", movesLeft, rollAmount);
               draw();
-              checkForDoorSquare();
-              turnChange(movesLeft, player);
+              if (!checkForDoorSquare()) {
+                player.turnIsComplete = true;
+                turnChange(movesLeft, player)
+              }
             }
             break;
         }
@@ -267,9 +275,12 @@ $(function () {
 
   function checkForDoorSquare() {
     if (doorSquares[`${player.x},${player.y}`]) {
-      player.currentRoom = doorSquares[`${player.x},${player.y}`];
-      $("#enter-prompt").text(`Would you like to enter the ${player.currentRoom}?`);
-      enterRoomDialog.dialog("open");
+      player.currentRoom = doorSquares[`${player.x},${player.y}`]
+      $("#enter-prompt").text(`Would you like to enter the ${player.currentRoom}?`)
+      enterRoomDialog.dialog("open")
+      return true;
+    } else {
+      return false;
     }
   }
 
