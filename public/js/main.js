@@ -481,6 +481,10 @@ $(function () {
         enterRoomDialog.dialog("close");
       },
       No: function () {
+        if (movesLeft === 0) {
+          player.turnIsComplete = true;
+          turnChange(movesLeft, player)
+        }
         enterRoomDialog.dialog("close");
       },
     },
